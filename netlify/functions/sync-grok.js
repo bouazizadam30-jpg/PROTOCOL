@@ -1,18 +1,10 @@
 exports.handler = async (event) => {
     try {
         const apiKey = process.env.GROK_API_KEY;
-        
-        // LOG DE SÉCURITÉ (Visible dans Netlify Logs)
-        console.log("Vérification clé API...", apiKey ? "PRÉSENTE" : "ABSENTE");
-
-        if (!apiKey) {
-            return { 
-                statusCode: 500, 
-                body: JSON.stringify({ error: "La variable GROK_API_KEY est introuvable sur Netlify." }) 
-            };
-        }
-
         const { transcript, duration } = JSON.parse(event.body);
+
+        // On s'assure que duration est un nombre valide
+        const cleanDuration = isNaN(duration) ? 15 : duration;
 
         const response = await fetch("https://api.x.ai/v1/chat/completions", {
             method: "POST",
@@ -23,8 +15,8 @@ exports.handler = async (event) => {
             body: JSON.stringify({
                 model: "grok-beta",
                 messages: [
-                    { role: "system", content: "Réponds UNIQUEMENT avec un tableau JSON [{\"start\": float, \"text\": string}]." },
-                    { role: "user", content: `Texte: "${transcript}". Durée: ${duration}s.` }
+                    { role: "system", content: "Tu es un expert en synchronisation. Réponds UNIQUEMENT avec un tableau JSON." },
+                    { role: "user", content: `Synchronise : "${transcript}" sur ${cleanDuration}s.` }
                 ],
                 temperature: 0
             })
@@ -32,8 +24,13 @@ exports.handler = async (event) => {
 
         const data = await response.json();
 
-        if (data.error) {
-            return { statusCode: 500, body: JSON.stringify({ error: "Erreur xAI: " + data.error.message }) };
+        // SI GROK RENVOIE UNE ERREUR (C'est ici que ça se joue)
+        if (!response.ok || data.error) {
+            console.error("DÉTAIL ERREUR GROK:", JSON.stringify(data.error || data));
+            return { 
+                statusCode: response.status, 
+                body: JSON.stringify({ error: "Grok Error", details: data.error }) 
+            };
         }
 
         return {
@@ -43,6 +40,7 @@ exports.handler = async (event) => {
         };
 
     } catch (error) {
-        return { statusCode: 500, body: JSON.stringify({ error: "Crash: " + error.message }) };
+        console.error("CRASH FONCTION:", error.message);
+        return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
     }
 };
