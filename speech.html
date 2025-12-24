@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        html, body { 
+            position: fixed; width: 100%; height: 100%; 
+            overflow: hidden; background: #000000; margin: 0;
+            touch-action: none; color: #FFFFFF;
+        }
+        .main-wrapper { 
+            position: relative; width: 100vw; height: 100vh; 
+            display: flex; overflow: hidden;
+            mask-image: linear-gradient(to right, black 60%, transparent 95%);
+            -webkit-mask-image: linear-gradient(to right, black 60%, transparent 95%);
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #dynamic-glow { 
+            position: absolute; inset: 0; z-index: 0; 
+            background: radial-gradient(circle at 90% 50%, rgba(255, 51, 102, 0.2) 0%, transparent 75%); 
+            transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .visual-anchor { 
+            position: absolute; right: -45vw; top: 50%; transform: translateY(-50%); 
+            width: 160vw; height: 160vw; max-width: 650px; max-height: 650px;
+            z-index: -1; pointer-events: none; opacity: 0.3; 
+        }
+        .rotating-arc { 
+            width: 100%; height: 100%; border-radius: 50%; 
+            border: 4px solid rgba(255, 255, 255, 0.05); 
+            border-left: 6px solid #FF3366; 
+            filter: blur(4px); 
+            transform: rotate(-30deg); transition: all 1s cubic-bezier(0.34, 1.56, 0.64, 1); 
+        }
+        .stat-display { 
+            position: absolute; right: 5vw; top: 52%; transform: translateY(-50%); 
+            text-align: right; z-index: 2; 
+        }
+        .big-number { 
+            font-family: 'Syncopate'; font-size: 32vw; font-weight: 900; 
+            line-height: 0.8; letter-spacing: -2vw; transition: all 0.8s ease; 
+            opacity: 0.9;
+        }
+        .content-overlay { 
+            position: relative; z-index: 10; width: 95%; height: 100%; 
+            display: flex; flex-direction: column; justify-content: flex-start; 
+            padding-left: 10vw; padding-top: 8vh; 
+            backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); 
+        }
+        .speech-item { transition: all 0.6s ease; cursor: pointer; margin-bottom: 50px; opacity: 0.15; }
+        .speech-item.active { opacity: 1; transform: translateX(20px); }
+        .tag { 
+            padding: 6px 14px; border-radius: 6px; font-size: 10px; font-weight: 900; 
+            text-transform: uppercase; letter-spacing: 0.2em; border: 1.5px solid currentColor; 
+            margin-bottom: 15px; display: inline-block;
+        }
+        .item-details { transition: all 0.5s ease; opacity: 0; transform: translateY(10px); }
+        .active .item-details { opacity: 1; transform: translateY(0); transition-delay: 0.2s; }
+        .lib-btn { 
+            margin-top: 25px; padding: 18px 45px; border-radius: 100px; 
+            font-family: 'Syncopate'; font-size: 11px; font-weight: 900; 
+            text-transform: uppercase; letter-spacing: 0.3em;
+            background: rgba(255, 255, 255, 0.08); border: 2px solid currentColor;
+            display: none; box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+        .active .lib-btn { display: inline-block; animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        
+        #library-overlay {
+            position: fixed; inset: 0; z-index: 1000;
+            background-color: #000000;
+            background-image: radial-gradient(circle at 50% 20%, var(--active-color-glow, rgba(255,255,255,0.1)) 0%, transparent 70%);
+            backdrop-filter: blur(80px); -webkit-backdrop-filter: blur(80px);
+            display: none; flex-direction: column; padding: 30px;
+            transform: translateY(100%);
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #library-overlay.open { display: flex; transform: translateY(0); }
+
+        .back-btn { font-family: 'Syncopate'; font-size: 10px; font-weight: 700; color: white; border: 1.5px solid rgba(255,255,255,0.2); padding: 12px 24px; border-radius: 100px; }
+
+        #transcription-container {
+            flex-grow: 1; overflow-y: auto; margin-top: 20px; 
+            mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+            padding: 25vh 10vw; 
+        }
+        #transcription-container::-webkit-scrollbar { display: none; }
+
+        .lyric-line {
+            font-size: 36px; font-weight: 800; color: #FFFFFF;
+            opacity: 0.05; filter: blur(5px); text-align: left; margin-bottom: 50px;
+            transition: all 0.5s cubic-bezier(0.2, 0, 0.2, 1); transform: scale(0.85);
+            transform-origin: left center; line-height: 1.1;
+        }
+        .lyric-line.active { opacity: 1; filter: blur(0px); transform: scale(1.1); text-shadow: 0 0 40px var(--active-color-glow); }
+        
+        .progress-bar-container { height: 4px; width: 100%; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 30px 0; overflow: hidden; }
+        #progress-fill { height: 100%; width: 0%; background: white; transition: width 0.1s linear; }
+
+        .bg-scale-down { transform: scale(0.95); filter: brightness(0.4); }
+    </style>
+</head>
+<body>
+    <audio id="audio-player" preload="auto">
+        <source src="audio/school.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="main-wrapper" id="app-body">
+        <div id="dynamic-glow"></div>
+        <div class="visual-anchor"><div class="rotating-arc" id="arc"></div></div>
+        <div class="stat-display"><div class="big-number" id="mainNum">01</div></div>
+
+        <div class="content-overlay">
+            <header class="mb-16">
+                <p class="font-mono text-[11px] text-[#C9A050] tracking-[0.7em] uppercase font-bold mb-4">Architect Protocol</p>
+                <h1 class="font-syncopate text-5xl font-bold tracking-tighter uppercase leading-none italic">Speech</h1>
+            </header>
+
+            <div id="list">
+                <div class="speech-item active" onclick="update(0, '#FF3366', '01')">
+                    <span class="tag text-[#FF3366] bg-[#FF336620]">Discipline</span>
+                    <div class="item-details">
+                        <h2 class="font-syncopate text-2xl font-bold uppercase text-white">Iron Mind</h2>
+                        <button class="lib-btn text-[#FF3366]" onclick="openLibrary('discipline', '#FF3366')">Enter Archive</button>
+                    </div>
+                </div>
+                <div class="speech-item" onclick="update(1, '#C9A050', '02')">
+                    <span class="tag text-[#C9A050] bg-[#C9A05020]">Wealth</span>
+                    <div class="item-details">
+                        <h2 class="font-syncopate text-2xl font-bold uppercase text-white">Capital</h2>
+                        <button class="lib-btn text-[#C9A050]" onclick="openLibrary('wealth', '#C9A050')">Enter Archive</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="library-overlay">
+        <div class="flex justify-between items-center mb-10">
+            <button onclick="closeLibrary()" class="back-btn">← Back</button>
+            <h2 id="lib-title" class="font-syncopate text-sm font-bold uppercase italic text-white/40 tracking-widest">Archive</h2>
+        </div>
+        <div class="text-center px-6">
+            <h3 id="track-name" class="font-syncopate text-xl font-black uppercase tracking-tight">Transmission</h3>
+            <div class="progress-bar-container"><div id="progress-fill"></div></div>
+        </div>
+        <div id="transcription-container"></div>
+    </div>
+
+    <script>
+        const audio = document.getElementById('audio-player');
+        let currentLyricsData = [];
+
+        function update(index, color, n) {
+            document.querySelectorAll('.speech-item').forEach(i => i.classList.remove('active'));
+            document.querySelectorAll('.speech-item')[index].classList.add('active');
+            const num = document.getElementById('mainNum');
+            num.style.color = color; num.innerText = n;
+            document.getElementById('arc').style.borderLeftColor = color;
+            document.getElementById('arc').style.transform = `rotate(${index * 45 - 30}deg)`;
+            document.getElementById('dynamic-glow').style.background = `radial-gradient(circle at 90% 50%, ${color}44 0%, transparent 75%)`;
+        }
+
+        async function openLibrary(cat, color) {
+            const overlay = document.getElementById('library-overlay');
+            const container = document.getElementById('transcription-container');
+            
+            overlay.style.setProperty('--active-color-glow', color);
+            document.getElementById('track-name').innerText = cat.toUpperCase() + " SYNC";
+            document.getElementById('track-name').style.color = color;
+            
+            container.innerHTML = '<p class="lyric-line active" style="opacity:0.5">Contacting Grok for Sync...</p>';
+            overlay.style.display = 'flex';
+            document.getElementById('app-body').classList.add('bg-scale-down');
+            setTimeout(() => overlay.classList.add('open'), 10);
+
+            // --- APPEL À LA FONCTION NETLIFY (GROK) ---
+            const rawText = "Bienvenue dans le programme School. Ici, la discipline est la seule règle. Préparez-vous à l'exécution du protocole.";
+            
+            try {
+                const response = await fetch('/.netlify/functions/sync-grok', {
+                    method: 'POST',
+                    body: JSON.stringify({ transcript: rawText, duration: audio.duration || 15 })
+                });
+                
+                currentLyricsData = await response.json();
+                renderLyrics(currentLyricsData);
+                
+                if(cat === 'discipline') {
+                    audio.currentTime = 0;
+                    audio.play();
+                }
+            } catch (err) {
+                container.innerHTML = '<p class="lyric-line active">Sync failed. Check API Key.</p>';
+            }
+        }
+
+        function renderLyrics(data) {
+            const container = document.getElementById('transcription-container');
+            container.innerHTML = '';
+            data.forEach((line, i) => {
+                const p = document.createElement('p');
+                p.className = 'lyric-line';
+                p.innerText = line.text;
+                p.id = `line-${i}`;
+                container.appendChild(p);
+            });
+        }
+
+        function closeLibrary() {
+            const overlay = document.getElementById('library-overlay');
+            overlay.classList.remove('open');
+            document.getElementById('app-body').classList.remove('bg-scale-down');
+            audio.pause();
+            setTimeout(() => overlay.style.display = 'none', 600);
+        }
+
+        audio.ontimeupdate = () => {
+            if (!currentLyricsData.length) return;
+            const time = audio.currentTime;
+            document.getElementById('progress-fill').style.width = `${(time / audio.duration) * 100}%`;
+
+            currentLyricsData.forEach((line, i) => {
+                if (time >= line.start) {
+                    document.querySelectorAll('.lyric-line').forEach(el => el.classList.remove('active'));
+                    const activeLine = document.getElementById(`line-${i}`);
+                    if (activeLine) {
+                        activeLine.classList.add('active');
+                        activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            });
+        };
+    </script>
+</body>
+</html>

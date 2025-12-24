@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE PROTOCOL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=JetBrains+Mono:wght@300&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #020406; color: white; margin: 0; overflow: hidden; }
+        .grain { position: fixed; inset: 0; z-index: 99; opacity: 0.03; pointer-events: none; background-image: url('https://grainy-gradients.vercel.app/noise.svg'); }
+        iframe { width: 100%; height: calc(100vh - 80px); border: none; transition: opacity 0.5s ease; }
+        .loading-bar { width: 0%; height: 2px; background: #C9A050; box-shadow: 0 0 15px #C9A050; transition: width 3.5s linear; }
+    </style>
+</head>
+<body>
+    <div class="grain"></div>
+
+    <div id="boot" class="fixed inset-0 z-[100] bg-[#020406] flex flex-col items-center justify-center p-10 transition-opacity duration-1000">
+        <span class="text-[#C9A050] text-7xl mb-20">♞</span>
+        <div class="w-full max-w-xs">
+            <div class="flex justify-between font-mono text-[9px] text-white/30 uppercase tracking-[0.5em] mb-2">
+                <span>Accessing Matrix</span> <span id="percent">0%</span>
+            </div>
+            <div class="w-full bg-white/5 h-[2px]"><div id="loader" class="loading-bar"></div></div>
+            <p id="msg" class="font-syncopate text-[10px] text-white/20 uppercase tracking-[0.4em] pt-4 text-center">Verifying...</p>
+        </div>
+    </div>
+
+    <div id="app-content" class="hidden opacity-0 transition-opacity duration-1000">
+        <iframe id="content-frame" src="home.html"></iframe>
+
+        <nav class="fixed bottom-0 left-0 right-0 h-20 bg-[#020406] border-t border-white/10 flex items-center justify-around px-8 z-50">
+            <div onclick="loadTab('home.html', this)" class="text-[#C9A050] text-2xl cursor-pointer">♞</div>
+            <div onclick="loadTab('neural.html', this)" class="text-white/20 text-2xl cursor-pointer hover:text-white transition-all">🧠</div>
+            <div class="text-white/20 text-2xl cursor-pointer">⚔</div>
+            <div class="text-white/20 text-2xl cursor-pointer">📊</div>
+        </nav>
+    </div>
+
+    <script>
+        function loadTab(file, el) {
+            document.getElementById('content-frame').src = file;
+            document.querySelectorAll('nav div').forEach(d => d.style.color = 'rgba(255,255,255,0.2)');
+            el.style.color = '#C9A050';
+        }
+
+        window.onload = () => {
+            const loader = document.getElementById('loader');
+            const percent = document.getElementById('percent');
+            loader.style.width = '100%';
+            let c = 0;
+            const int = setInterval(() => {
+                c++; percent.innerText = c+'%';
+                if(c >= 100) {
+                    clearInterval(int);
+                    document.getElementById('msg').innerText = "Welcome brokie";
+                    document.getElementById('msg').style.color = "#C9A050";
+                    setTimeout(() => {
+                        document.getElementById('boot').style.opacity = '0';
+                        setTimeout(() => {
+                            document.getElementById('boot').style.display = 'none';
+                            document.getElementById('app-content').classList.remove('hidden');
+                            setTimeout(() => document.getElementById('app-content').style.opacity = '1', 100);
+                        }, 1000);
+                    }, 1500);
+                }
+            }, 30);
+        };
+    </script>
+</body>
+</html>
