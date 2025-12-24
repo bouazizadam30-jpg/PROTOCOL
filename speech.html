@@ -164,39 +164,41 @@
             document.getElementById('dynamic-glow').style.background = `radial-gradient(circle at 90% 50%, ${color}44 0%, transparent 75%)`;
         }
 
-        async function openLibrary(cat, color) {
-            const overlay = document.getElementById('library-overlay');
-            const container = document.getElementById('transcription-container');
-            
-            overlay.style.setProperty('--active-color-glow', color);
-            document.getElementById('track-name').innerText = cat.toUpperCase() + " SYNC";
-            document.getElementById('track-name').style.color = color;
-            
-            container.innerHTML = '<p class="lyric-line active" style="opacity:0.5">Contacting Grok for Sync...</p>';
-            overlay.style.display = 'flex';
-            document.getElementById('app-body').classList.add('bg-scale-down');
-            setTimeout(() => overlay.classList.add('open'), 10);
+async function openLibrary(cat, color) {
+    const overlay = document.getElementById('library-overlay');
+    const container = document.getElementById('transcription-container');
+    
+    overlay.style.setProperty('--active-color-glow', color);
+    document.getElementById('track-name').innerText = cat.toUpperCase() + " SYNC";
+    
+    container.innerHTML = '<p class="lyric-line active" style="opacity:0.5">Contacting Grok for Sync...</p>';
+    overlay.style.display = 'flex';
+    document.getElementById('app-body').classList.add('bg-scale-down');
+    setTimeout(() => overlay.classList.add('open'), 10);
 
-            // --- APPEL À LA FONCTION NETLIFY (GROK) ---
-            const rawText = "Bienvenue dans le programme School. Ici, la discipline est la seule règle. Préparez-vous à l'exécution du protocole.";
-            
-            try {
-                const response = await fetch('/.netlify/functions/sync-grok', {
-                    method: 'POST',
-                    body: JSON.stringify({ transcript: rawText, duration: audio.duration || 15 })
-                });
-                
-                currentLyricsData = await response.json();
-                renderLyrics(currentLyricsData);
-                
-                if(cat === 'discipline') {
-                    audio.currentTime = 0;
-                    audio.play();
-                }
-            } catch (err) {
-                container.innerHTML = '<p class="lyric-line active">Sync failed. Check API Key.</p>';
-            }
+    const rawText = "Bienvenue dans le programme School. Ici, la discipline est la seule règle. Préparez-vous à l'exécution du protocole.";
+    
+    try {
+        const response = await fetch('/.netlify/functions/sync-grok', {
+            method: 'POST',
+            body: JSON.stringify({ transcript: rawText, duration: audio.duration || 15 })
+        });
+        
+        const result = await response.text(); // On récupère d'abord en texte pour vérifier
+        console.log("Réponse de Grok:", result);
+        
+        currentLyricsData = JSON.parse(result); // On transforme en JSON manuellement
+        renderLyrics(currentLyricsData);
+        
+        if(cat === 'discipline') {
+            audio.currentTime = 0;
+            audio.play();
         }
+    } catch (err) {
+        console.error("Erreur détaillée:", err);
+        container.innerHTML = '<p class="lyric-line active">Sync failed. Check Console (F12).</p>';
+    }
+}
 
         function renderLyrics(data) {
             const container = document.getElementById('transcription-container');
