@@ -2,8 +2,6 @@ exports.handler = async (event) => {
     try {
         const apiKey = process.env.GROK_API_KEY;
         const { transcript, duration } = JSON.parse(event.body);
-
-        // On s'assure que duration est un nombre valide
         const cleanDuration = isNaN(duration) ? 15 : duration;
 
         const response = await fetch("https://api.x.ai/v1/chat/completions", {
@@ -13,10 +11,10 @@ exports.handler = async (event) => {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "grok-beta",
+                model: "grok-3", // CHANGEMENT ICI : grok-beta -> grok-3
                 messages: [
-                    { role: "system", content: "Tu es un expert en synchronisation. Réponds UNIQUEMENT avec un tableau JSON." },
-                    { role: "user", content: `Synchronise : "${transcript}" sur ${cleanDuration}s.` }
+                    { role: "system", content: "Tu es un expert en synchronisation audio. Réponds UNIQUEMENT avec un tableau JSON [{\"start\": float, \"text\": string}]. Pas de texte, pas de markdown." },
+                    { role: "user", content: `Synchronise ce texte : "${transcript}" sur une durée totale de ${cleanDuration} secondes.` }
                 ],
                 temperature: 0
             })
@@ -24,7 +22,6 @@ exports.handler = async (event) => {
 
         const data = await response.json();
 
-        // SI GROK RENVOIE UNE ERREUR (C'est ici que ça se joue)
         if (!response.ok || data.error) {
             console.error("DÉTAIL ERREUR GROK:", JSON.stringify(data.error || data));
             return { 
@@ -33,10 +30,14 @@ exports.handler = async (event) => {
             };
         }
 
+        // Nettoyage des balises Markdown au cas où
+        let content = data.choices[0].message.content.trim();
+        content = content.replace(/```json/g, "").replace(/```/g, "").trim();
+
         return {
             statusCode: 200,
             headers: { "Content-Type": "application/json" },
-            body: data.choices[0].message.content.replace(/```json/g, "").replace(/```/g, "").trim()
+            body: content
         };
 
     } catch (error) {
