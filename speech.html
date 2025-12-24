@@ -127,7 +127,7 @@
                     <span class="tag text-[#FF3366] bg-[#FF336620]">Discipline</span>
                     <div class="item-details">
                         <h2 class="font-syncopate text-2xl font-bold uppercase text-white">Iron Mind</h2>
-                        <button class="lib-btn text-[#FF3366]" onclick="openCategory('iron mind', '#FF3366')">Enter Archive</button>
+                        <button class="lib-btn text-[#FF3366]" onclick="openCategory('iron-mind', '#FF3366')">Enter Archive</button>
                     </div>
                 </div>
                 <div class="speech-item" onclick="update(1, '#C9A050', '02')">
@@ -166,17 +166,21 @@
     </div>
 
     <script>
-        // --- CONFIGURATION DE LA BIBLIOTHÈQUE ---
-        // Ajoute ici tes fichiers. L'id doit correspondre au nom du fichier (.mp3 / .json)
-        const audioLibrary = [
-            { id: 'school', title: 'Iron Mind Protocol', folder: 'iron mind', color: '#FF3366' },
-            { id: 'discipline_02', title: 'Hard Mode', folder: 'iron mind', color: '#FF3366' },
-            { id: 'wealth_01', title: 'Capital Flow', folder: 'capital', color: '#C9A050' },
-            { id: 'neural_01', title: 'Deep Focus', folder: 'neural', color: '#00FFFF' }
-        ];
-
         const audio = document.getElementById('audio-player');
+        let audioLibrary = []; // Déclaration unique
         let currentLyricsData = [];
+
+        // CHARGEMENT AUTOMATIQUE
+        async function initLibrary() {
+            try {
+                const response = await fetch('audio/library.json');
+                audioLibrary = await response.json();
+                console.log("Bibliothèque chargée :", audioLibrary);
+            } catch (err) {
+                console.error("Erreur bibliothèque :", err);
+            }
+        }
+        window.onload = initLibrary;
 
         function update(index, color, n) {
             document.querySelectorAll('.speech-item').forEach(i => i.classList.remove('active'));
@@ -198,7 +202,6 @@
             playerView.style.display = 'none';
             selectionContainer.innerHTML = ''; 
 
-            // Filtrage par nom de dossier exact
             const filtered = audioLibrary.filter(track => track.folder === folderName);
 
             filtered.forEach(track => {
@@ -224,7 +227,6 @@
             container.innerHTML = '<p class="lyric-line active" style="opacity:0.5">Initializing Sync...</p>';
 
             try {
-                // Chemin dynamique : audio/NOM_DOSSIER/FICHIER.json
                 const response = await fetch(`audio/${track.folder}/${track.id}.json`);
                 currentLyricsData = await response.json();
                 renderLyrics(currentLyricsData);
@@ -233,7 +235,7 @@
                 audio.currentTime = 0;
                 audio.play();
             } catch (err) {
-                container.innerHTML = `<p class="lyric-line active">Sync missing. Check audio/${track.folder}/${track.id}.json</p>`;
+                container.innerHTML = `<p class="lyric-line active">Sync error for ${track.id}</p>`;
             }
         }
 
