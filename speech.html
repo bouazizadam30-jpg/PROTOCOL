@@ -165,116 +165,131 @@
         <div id="track-selection"></div>
     </div>
 
-    <script>
-        const audio = document.getElementById('audio-player');
-        let audioLibrary = []; // Déclaration unique
-        let currentLyricsData = [];
+<script>
+    const audio = document.getElementById('audio-player');
+    let audioLibrary = []; // UNE SEULE DÉCLARATION
+    let currentLyricsData = [];
 
-        // CHARGEMENT AUTOMATIQUE
-        async function initLibrary() {
-            try {
-                const response = await fetch('audio/library.json');
-                audioLibrary = await response.json();
-                console.log("Bibliothèque chargée :", audioLibrary);
-            } catch (err) {
-                console.error("Erreur bibliothèque :", err);
-            }
-        }
-        window.onload = initLibrary;
-
-        function update(index, color, n) {
-            document.querySelectorAll('.speech-item').forEach(i => i.classList.remove('active'));
-            document.querySelectorAll('.speech-item')[index].classList.add('active');
-            const num = document.getElementById('mainNum');
-            num.style.color = color; num.innerText = n;
-            document.getElementById('arc').style.borderLeftColor = color;
-            document.getElementById('arc').style.transform = `rotate(${index * 45 - 30}deg)`;
-            document.getElementById('dynamic-glow').style.background = `radial-gradient(circle at 90% 50%, ${color}44 0%, transparent 75%)`;
-        }
-
-        function openCategory(folderName, color) {
-            const overlay = document.getElementById('library-overlay');
-            const selectionContainer = document.getElementById('track-selection');
-            const playerView = document.getElementById('player-view');
+    // 1. CHARGEMENT DE LA BIBLIOTHÈQUE DEPUIS LE FICHIER GÉNÉRÉ PAR PYTHON
+    async function initLibrary() {
+        try {
+            // On cherche le fichier créé par ton script sync_all.py
+            const response = await fetch('audio/library.json');
+            if (!response.ok) throw new Error("library.json non trouvé sur le serveur");
             
-            overlay.style.setProperty('--active-color-glow', color);
-            selectionContainer.style.display = 'flex';
-            playerView.style.display = 'none';
-            selectionContainer.innerHTML = ''; 
+            audioLibrary = await response.json();
+            console.log("Système prêt. Audios chargés :", audioLibrary.length);
+        } catch (err) {
+            console.error("Erreur critique :", err.message);
+            // Petit message d'alerte visuel pour toi
+            document.getElementById('list').innerHTML += `<p style="color:red; font-size:10px; margin-top:20px;">⚠️ library.json manquant. Fais un PUSH sur GitHub.</p>`;
+        }
+    }
 
-            const filtered = audioLibrary.filter(track => track.folder === folderName);
+    // Lancer le chargement au démarrage
+    window.onload = initLibrary;
 
-            filtered.forEach(track => {
-                const card = document.createElement('div');
-                card.className = 'track-card';
-                card.innerHTML = `<h3 class="font-syncopate font-bold text-lg">${track.title}</h3>`;
-                card.onclick = () => loadTrack(track);
-                selectionContainer.appendChild(card);
-            });
+    function update(index, color, n) {
+        document.querySelectorAll('.speech-item').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.speech-item')[index].classList.add('active');
+        const num = document.getElementById('mainNum');
+        num.style.color = color; num.innerText = n;
+        document.getElementById('arc').style.borderLeftColor = color;
+        document.getElementById('arc').style.transform = `rotate(${index * 45 - 30}deg)`;
+        document.getElementById('dynamic-glow').style.background = `radial-gradient(circle at 90% 50%, ${color}44 0%, transparent 75%)`;
+    }
 
-            overlay.style.display = 'flex';
-            document.getElementById('app-body').classList.add('bg-scale-down');
-            setTimeout(() => overlay.classList.add('open'), 10);
+    function openCategory(folderName, color) {
+        const overlay = document.getElementById('library-overlay');
+        const selectionContainer = document.getElementById('track-selection');
+        const playerView = document.getElementById('player-view');
+        
+        overlay.style.setProperty('--active-color-glow', color);
+        selectionContainer.style.display = 'flex';
+        playerView.style.display = 'none';
+        selectionContainer.innerHTML = ''; 
+
+        // Filtrage automatique : on cherche dans les dossiers iron-mind, capital ou neural
+        const filtered = audioLibrary.filter(track => track.folder === folderName);
+
+        if (filtered.length === 0) {
+            selectionContainer.innerHTML = '<p class="text-white/50">Aucun audio trouvé dans ce dossier.</p>';
         }
 
-        async function loadTrack(track) {
-            document.getElementById('track-selection').style.display = 'none';
-            document.getElementById('player-view').style.display = 'block';
-            document.getElementById('track-name').innerText = track.title;
-            document.getElementById('track-name').style.color = track.color;
+        filtered.forEach(track => {
+            const card = document.createElement('div');
+            card.className = 'track-card';
+            card.innerHTML = `<h3 class="font-syncopate font-bold text-lg">${track.title}</h3>`;
+            card.onclick = () => loadTrack(track);
+            selectionContainer.appendChild(card);
+        });
+
+        overlay.style.display = 'flex';
+        document.getElementById('app-body').classList.add('bg-scale-down');
+        setTimeout(() => overlay.classList.add('open'), 10);
+    }
+
+    async function loadTrack(track) {
+        document.getElementById('track-selection').style.display = 'none';
+        document.getElementById('player-view').style.display = 'block';
+        document.getElementById('track-name').innerText = track.title;
+        document.getElementById('track-name').style.color = track.color;
+        
+        const container = document.getElementById('transcription-container');
+        container.innerHTML = '<p class="lyric-line active" style="opacity:0.5">Syncing...</p>';
+
+        try {
+            // On utilise le dossier et l'id fournis par library.json
+            const response = await fetch(`audio/${track.folder}/${track.id}.json`);
+            if (!response.ok) throw new Error("Sync non trouvée");
             
-            const container = document.getElementById('transcription-container');
-            container.innerHTML = '<p class="lyric-line active" style="opacity:0.5">Initializing Sync...</p>';
-
-            try {
-                const response = await fetch(`audio/${track.folder}/${track.id}.json`);
-                currentLyricsData = await response.json();
-                renderLyrics(currentLyricsData);
-                
-                audio.src = `audio/${track.folder}/${track.id}.mp3`;
-                audio.currentTime = 0;
-                audio.play();
-            } catch (err) {
-                container.innerHTML = `<p class="lyric-line active">Sync error for ${track.id}</p>`;
-            }
+            currentLyricsData = await response.json();
+            renderLyrics(currentLyricsData);
+            
+            audio.src = `audio/${track.folder}/${track.id}.mp3`;
+            audio.currentTime = 0;
+            audio.play();
+        } catch (err) {
+            container.innerHTML = `<p class="lyric-line active" style="font-size:20px">ERREUR : Fichier .json manquant dans audio/${track.folder}/</p>`;
         }
+    }
 
-        function renderLyrics(data) {
-            const container = document.getElementById('transcription-container');
-            container.innerHTML = '';
-            data.forEach((line, i) => {
-                const p = document.createElement('p');
-                p.className = 'lyric-line';
-                p.innerText = line.text;
-                p.id = `line-${i}`;
-                container.appendChild(p);
-            });
-        }
+    function renderLyrics(data) {
+        const container = document.getElementById('transcription-container');
+        container.innerHTML = '';
+        data.forEach((line, i) => {
+            const p = document.createElement('p');
+            p.className = 'lyric-line';
+            p.innerText = line.text;
+            p.id = `line-${i}`;
+            container.appendChild(p);
+        });
+    }
 
-        function closeLibrary() {
-            const overlay = document.getElementById('library-overlay');
-            overlay.classList.remove('open');
-            document.getElementById('app-body').classList.remove('bg-scale-down');
-            audio.pause();
-            setTimeout(() => overlay.style.display = 'none', 600);
-        }
+    function closeLibrary() {
+        const overlay = document.getElementById('library-overlay');
+        overlay.classList.remove('open');
+        document.getElementById('app-body').classList.remove('bg-scale-down');
+        audio.pause();
+        setTimeout(() => overlay.style.display = 'none', 600);
+    }
 
-        audio.ontimeupdate = () => {
-            if (!currentLyricsData.length) return;
-            const time = audio.currentTime;
-            document.getElementById('progress-fill').style.width = `${(time / audio.duration) * 100}%`;
+    audio.ontimeupdate = () => {
+        if (!currentLyricsData.length) return;
+        const time = audio.currentTime;
+        document.getElementById('progress-fill').style.width = `${(time / audio.duration) * 100}%`;
 
-            currentLyricsData.forEach((line, i) => {
-                if (time >= line.start) {
-                    document.querySelectorAll('.lyric-line').forEach(el => el.classList.remove('active'));
-                    const activeLine = document.getElementById(`line-${i}`);
-                    if (activeLine) {
-                        activeLine.classList.add('active');
-                        activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
+        currentLyricsData.forEach((line, i) => {
+            if (time >= line.start) {
+                document.querySelectorAll('.lyric-line').forEach(el => el.classList.remove('active'));
+                const activeLine = document.getElementById(`line-${i}`);
+                if (activeLine) {
+                    activeLine.classList.add('active');
+                    activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
-            });
-        };
-    </script>
+            }
+        });
+    };
+</script>
 </body>
 </html>

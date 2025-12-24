@@ -1,0 +1,23 @@
+[
+    {
+        "id": "visualize money",
+        "title": "Visualize Money",
+        "folder": "capital",
+        "category": "wealth",
+        "color": "#C9A050"
+    },
+    {
+        "id": "real dream",
+        "title": "Real Dream",
+        "folder": "neural",
+        "category": "neural",
+        "color": "#00FFFF"
+    },
+    {
+        "id": "school",
+        "title": "School",
+        "folder": "neural",
+        "category": "neural",
+        "color": "#00FFFF"
+    }
+]
