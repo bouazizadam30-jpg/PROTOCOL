@@ -9,7 +9,7 @@
         html, body { 
             position: fixed; width: 100%; height: 100%; 
             overflow: hidden; background: #000000; margin: 0;
-            touch-action: none; color: #FFFFFF;
+            touch-action: none; color: #FFFFFF; font-family: 'Inter', sans-serif;
         }
         .main-wrapper { 
             position: relative; width: 100vw; height: 100vh; 
@@ -78,7 +78,6 @@
             transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
         #library-overlay.open { display: flex; transform: translateY(0); }
-
         .back-btn { font-family: 'Syncopate'; font-size: 10px; font-weight: 700; color: white; border: 1.5px solid rgba(255,255,255,0.2); padding: 12px 24px; border-radius: 100px; }
 
         #transcription-container {
@@ -88,6 +87,13 @@
             padding: 25vh 10vw; 
         }
         #transcription-container::-webkit-scrollbar { display: none; }
+
+        #track-selection { display: flex; flex-direction: column; gap: 20px; margin-top: 50px; overflow-y: auto; }
+        .track-card {
+            padding: 25px; background: rgba(255,255,255,0.03); border-left: 4px solid var(--active-color-glow);
+            border-radius: 0 15px 15px 0; cursor: pointer; transition: 0.3s;
+        }
+        .track-card:hover { background: rgba(255,255,255,0.08); transform: translateX(10px); }
 
         .lyric-line {
             font-size: 36px; font-weight: 800; color: #FFFFFF;
@@ -99,14 +105,11 @@
         
         .progress-bar-container { height: 4px; width: 100%; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 30px 0; overflow: hidden; }
         #progress-fill { height: 100%; width: 0%; background: white; transition: width 0.1s linear; }
-
         .bg-scale-down { transform: scale(0.95); filter: brightness(0.4); }
     </style>
 </head>
 <body>
-    <audio id="audio-player" preload="auto">
-        <source src="audio/school.mp3" type="audio/mpeg">
-    </audio>
+    <audio id="audio-player" preload="auto"></audio>
 
     <div class="main-wrapper" id="app-body">
         <div id="dynamic-glow"></div>
@@ -124,14 +127,21 @@
                     <span class="tag text-[#FF3366] bg-[#FF336620]">Discipline</span>
                     <div class="item-details">
                         <h2 class="font-syncopate text-2xl font-bold uppercase text-white">Iron Mind</h2>
-                        <button class="lib-btn text-[#FF3366]" onclick="openLibrary('discipline', '#FF3366')">Enter Archive</button>
+                        <button class="lib-btn text-[#FF3366]" onclick="openCategory('iron mind', '#FF3366')">Enter Archive</button>
                     </div>
                 </div>
                 <div class="speech-item" onclick="update(1, '#C9A050', '02')">
                     <span class="tag text-[#C9A050] bg-[#C9A05020]">Wealth</span>
                     <div class="item-details">
                         <h2 class="font-syncopate text-2xl font-bold uppercase text-white">Capital</h2>
-                        <button class="lib-btn text-[#C9A050]" onclick="openLibrary('wealth', '#C9A050')">Enter Archive</button>
+                        <button class="lib-btn text-[#C9A050]" onclick="openCategory('capital', '#C9A050')">Enter Archive</button>
+                    </div>
+                </div>
+                <div class="speech-item" onclick="update(2, '#00FFFF', '03')">
+                    <span class="tag text-[#00FFFF] bg-[#00FFFF20]">Neural</span>
+                    <div class="item-details">
+                        <h2 class="font-syncopate text-2xl font-bold uppercase text-white">Focus</h2>
+                        <button class="lib-btn text-[#00FFFF]" onclick="openCategory('neural', '#00FFFF')">Enter Archive</button>
                     </div>
                 </div>
             </div>
@@ -143,14 +153,28 @@
             <button onclick="closeLibrary()" class="back-btn">← Back</button>
             <h2 id="lib-title" class="font-syncopate text-sm font-bold uppercase italic text-white/40 tracking-widest">Archive</h2>
         </div>
-        <div class="text-center px-6">
-            <h3 id="track-name" class="font-syncopate text-xl font-black uppercase tracking-tight">Transmission</h3>
-            <div class="progress-bar-container"><div id="progress-fill"></div></div>
+        
+        <div id="player-view" style="display: none;">
+            <div class="text-center px-6">
+                <h3 id="track-name" class="font-syncopate text-xl font-black uppercase tracking-tight">Transmission</h3>
+                <div class="progress-bar-container"><div id="progress-fill"></div></div>
+            </div>
+            <div id="transcription-container"></div>
         </div>
-        <div id="transcription-container"></div>
+
+        <div id="track-selection"></div>
     </div>
 
     <script>
+        // --- CONFIGURATION DE LA BIBLIOTHÈQUE ---
+        // Ajoute ici tes fichiers. L'id doit correspondre au nom du fichier (.mp3 / .json)
+        const audioLibrary = [
+            { id: 'school', title: 'Iron Mind Protocol', folder: 'iron mind', color: '#FF3366' },
+            { id: 'discipline_02', title: 'Hard Mode', folder: 'iron mind', color: '#FF3366' },
+            { id: 'wealth_01', title: 'Capital Flow', folder: 'capital', color: '#C9A050' },
+            { id: 'neural_01', title: 'Deep Focus', folder: 'neural', color: '#00FFFF' }
+        ];
+
         const audio = document.getElementById('audio-player');
         let currentLyricsData = [];
 
@@ -164,40 +188,54 @@
             document.getElementById('dynamic-glow').style.background = `radial-gradient(circle at 90% 50%, ${color}44 0%, transparent 75%)`;
         }
 
-async function openLibrary(cat, color) {
-    const overlay = document.getElementById('library-overlay');
-    const container = document.getElementById('transcription-container');
-    
-    // On définit le nom du fichier (si cat est 'discipline', on cherche 'school')
-    const fileName = (cat === 'discipline') ? 'school' : cat;
+        function openCategory(folderName, color) {
+            const overlay = document.getElementById('library-overlay');
+            const selectionContainer = document.getElementById('track-selection');
+            const playerView = document.getElementById('player-view');
+            
+            overlay.style.setProperty('--active-color-glow', color);
+            selectionContainer.style.display = 'flex';
+            playerView.style.display = 'none';
+            selectionContainer.innerHTML = ''; 
 
-    overlay.style.setProperty('--active-color-glow', color);
-    document.getElementById('track-name').innerText = cat.toUpperCase() + " SYNC";
-    document.getElementById('track-name').style.color = color;
-    
-    container.innerHTML = '<p class="lyric-line active" style="opacity:0.5">Loading local sync...</p>';
-    overlay.style.display = 'flex';
-    document.getElementById('app-body').classList.add('bg-scale-down');
-    setTimeout(() => overlay.classList.add('open'), 10);
+            // Filtrage par nom de dossier exact
+            const filtered = audioLibrary.filter(track => track.folder === folderName);
 
-    try {
-        // CHARGEMENT DU FICHIER JSON LOCAL (CRÉÉ PAR TON SCRIPT PYTHON)
-        const response = await fetch(`audio/${fileName}.json`);
-        if (!response.ok) throw new Error("Fichier JSON manquant");
-        
-        currentLyricsData = await response.json();
-        renderLyrics(currentLyricsData);
-        
-        // LANCEMENT DE L'AUDIO
-        audio.src = `audio/${fileName}.mp3`;
-        audio.currentTime = 0;
-        audio.play();
+            filtered.forEach(track => {
+                const card = document.createElement('div');
+                card.className = 'track-card';
+                card.innerHTML = `<h3 class="font-syncopate font-bold text-lg">${track.title}</h3>`;
+                card.onclick = () => loadTrack(track);
+                selectionContainer.appendChild(card);
+            });
 
-    } catch (err) {
-        console.error(err);
-        container.innerHTML = `<p class="lyric-line active">Sync error: Run 'python sync_all.py' to generate ${fileName}.json</p>`;
-    }
-}
+            overlay.style.display = 'flex';
+            document.getElementById('app-body').classList.add('bg-scale-down');
+            setTimeout(() => overlay.classList.add('open'), 10);
+        }
+
+        async function loadTrack(track) {
+            document.getElementById('track-selection').style.display = 'none';
+            document.getElementById('player-view').style.display = 'block';
+            document.getElementById('track-name').innerText = track.title;
+            document.getElementById('track-name').style.color = track.color;
+            
+            const container = document.getElementById('transcription-container');
+            container.innerHTML = '<p class="lyric-line active" style="opacity:0.5">Initializing Sync...</p>';
+
+            try {
+                // Chemin dynamique : audio/NOM_DOSSIER/FICHIER.json
+                const response = await fetch(`audio/${track.folder}/${track.id}.json`);
+                currentLyricsData = await response.json();
+                renderLyrics(currentLyricsData);
+                
+                audio.src = `audio/${track.folder}/${track.id}.mp3`;
+                audio.currentTime = 0;
+                audio.play();
+            } catch (err) {
+                container.innerHTML = `<p class="lyric-line active">Sync missing. Check audio/${track.folder}/${track.id}.json</p>`;
+            }
+        }
 
         function renderLyrics(data) {
             const container = document.getElementById('transcription-container');
