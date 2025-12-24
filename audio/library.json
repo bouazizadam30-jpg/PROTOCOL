@@ -7,6 +7,34 @@
         "color": "#C9A050"
     },
     {
+        "id": "discipline",
+        "title": "Discipline",
+        "folder": "iron-mind",
+        "category": "discipline",
+        "color": "#FF3366"
+    },
+    {
+        "id": "lucky day",
+        "title": "Lucky Day",
+        "folder": "iron-mind",
+        "category": "discipline",
+        "color": "#FF3366"
+    },
+    {
+        "id": "make it true",
+        "title": "Make It True",
+        "folder": "iron-mind",
+        "category": "discipline",
+        "color": "#FF3366"
+    },
+    {
+        "id": "work hard",
+        "title": "Work Hard",
+        "folder": "iron-mind",
+        "category": "discipline",
+        "color": "#FF3366"
+    },
+    {
         "id": "real dream",
         "title": "Real Dream",
         "folder": "neural",
