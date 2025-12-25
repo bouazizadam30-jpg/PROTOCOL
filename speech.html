@@ -7,10 +7,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
 html, body { 
-    position: fixed; width: 100%; height: 100%; 
-    overflow: hidden; background: #000000; margin: 0;
-    touch-action: pan-y; /* <-- CHANGÉ : Autorise le défilement vertical au doigt */
-    color: #FFFFFF; font-family: 'Inter', sans-serif;
+    position: fixed; 
+    width: 100%; 
+    height: 100%; 
+    overflow: hidden; 
+    background: #000000; 
+    margin: 0;
+    /* On autorise le défilement vertical pour les mobiles */
+    touch-action: pan-y; 
+    color: #FFFFFF; 
+    font-family: 'Inter', sans-serif;
 }
         .main-wrapper { 
             position: relative; width: 100vw; height: 100vh; 
@@ -81,14 +87,23 @@ html, body {
         #library-overlay.open { display: flex; transform: translateY(0); }
         .back-btn { font-family: 'Syncopate'; font-size: 10px; font-weight: 700; color: white; border: 1.5px solid rgba(255,255,255,0.2); padding: 12px 24px; border-radius: 100px; }
 
-#transcription-container {
+        #transcription-container {
     flex-grow: 1; 
-    overflow-y: scroll; /* Force l'autorisation du scroll */
-    -webkit-overflow-scrolling: touch; /* Scroll "élastique" fluide sur iPhone */
-    margin-top: 20px; 
+    overflow-y: auto !important; /* Force le scroll si le contenu dépasse */
+    height: 60vh; /* Donne une zone de hauteur définie pour le calcul du scroll */
+    pointer-events: auto; /* Assure que le conteneur reçoit les clics/touches */
+    -webkit-overflow-scrolling: touch; /* Scroll fluide iOS */
+    touch-action: pan-y; /* Autorise explicitement le défilement ici */
+    
     mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
-    padding: 35vh 10vw; /* On augmente le padding pour que la première phrase soit bien au centre */
+    padding: 30vh 10vw; 
+    margin-top: 20px;
+}
+.lyric-line {
+    pointer-events: auto;
+    cursor: pointer;
+    /* ... reste de ton style ... */
 }
         #transcription-container::-webkit-scrollbar { display: none; }
 
