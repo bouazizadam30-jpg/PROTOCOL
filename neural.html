@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -16,7 +16,6 @@
         html, body { position: fixed; width: 100%; height: 100%; overflow: hidden; background: #000; margin: 0; color: #FFF; font-family: 'Inter'; }
         #dynamic-glow { position: absolute; inset: 0; background: radial-gradient(circle at 50% -20%, rgba(0, 255, 255, 0.15) 0%, transparent 70%); z-index: 0; }
 
-        /* PREMIUM GLOWY GLASS CARD */
         .reactor-card { 
             background: rgba(255, 255, 255, 0.02); 
             backdrop-filter: blur(50px); 
@@ -32,7 +31,6 @@
 
         @keyframes slideUp { to { transform: translateY(0); opacity: 1; } }
 
-        /* LIQUID ANIMATED BARS */
         .neon-track { height: 14px; background: rgba(255, 255, 255, 0.03); border-radius: 20px; overflow: hidden; position: relative; border: 1px solid rgba(255, 255, 255, 0.05); }
         .neon-fill { 
             height: 100%; 
@@ -43,7 +41,6 @@
             box-shadow: 0 0 30px var(--current-color);
         }
 
-        /* GLOWING FLOW ANIMATION */
         .neon-fill::after {
             content: ''; position: absolute; inset: 0;
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
@@ -51,6 +48,7 @@
         }
         @keyframes flow { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
 
+        /* NAV MENU */
         #nav-container { position: fixed; top: 30px; left: 25px; z-index: 5000; display: flex; align-items: center; }
         .nav-trigger { width: 42px; height: 12px; border-radius: 30px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); cursor: pointer; transition: 0.6s; flex-shrink: 0; }
         .nav-trigger.open { width: 12px; height: 12px; border-radius: 50%; background: #00FFFF; box-shadow: 0 0 20px #00FFFF; }
@@ -63,7 +61,7 @@
 <body>
     <div id="dynamic-glow"></div>
 
-    <div id="nav-container">
+    <nav id="nav-container">
         <div class="nav-trigger" id="trigger" onclick="toggleNav(event)"></div>
         <div id="nav-menu">
             <a href="index.html" class="nav-item"><span class="font-syncopate text-[8px] font-bold uppercase">HQ</span></a>
@@ -71,15 +69,15 @@
             <a href="fuel.html" class="nav-item"><span class="font-syncopate text-[8px] font-bold uppercase">Fuel</span></a>
             <a href="speech.html" class="nav-item"><span class="font-syncopate text-[8px] font-bold uppercase">Speech</span></a>
         </div>
-    </div>
+    </nav>
 
-    <div class="content-scroll h-full flex flex-col px-6 pt-32 pb-10">
+    <main class="content-scroll h-full flex flex-col px-6 pt-32 pb-10">
         <header class="text-center mb-16">
             <p class="font-mono text-[10px] text-[#00FFFF] tracking-[0.8em] uppercase font-black opacity-60 mb-2">NEURAL_SYNC ACTIVE</p>
             <h1 class="font-syncopate text-4xl font-bold italic tracking-tighter">Neuro-Analysis</h1>
         </header>
 
-        <div class="space-y-8 flex-1">
+        <section class="space-y-8 flex-1">
             <div class="reactor-card" style="--current-color: var(--dopa); animation-delay: 0.1s;">
                 <div class="flex justify-between items-end mb-4">
                     <div>
@@ -112,51 +110,73 @@
                 </div>
                 <div class="neon-track"><div id="bar-testo" class="neon-fill" style="background: var(--testo); --current-color: var(--testo);"></div></div>
             </div>
-        </div>
-    </div>
+        </section>
+    </main>
 
     <script>
-        let protocolData = JSON.parse(localStorage.getItem('architect_fuel_v1')) || {};
-        const today = new Date();
-        const todayKey = `kcal count ${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+        function toggleNav(e) { 
+            e.stopPropagation(); 
+            document.getElementById('nav-menu').classList.toggle('active'); 
+            document.getElementById('trigger').classList.toggle('open'); 
+        }
 
         const calculateLevels = () => {
-            const data = protocolData[todayKey];
-            if (!data || !data.meals.length) return { dopa: 12, sero: 15, testo: 10 };
-
-            let d = 20, s = 20, t = 20; // Baseline levels
-            const text = data.meals.map(m => m.name + m.ingredients.join('')).join(' ').toLowerCase();
-
-            // DOPAMINE SCAN (Tyrosine sources)
-            if (text.includes('salmon') || text.includes('egg') || text.includes('meat') || text.includes('chicken') || text.includes('steak')) d += 40;
-            if (text.includes('coffee') || text.includes('caffeine')) d += 20;
-
-            // SEROTONIN SCAN (Tryptophan + Carbs)
-            if (text.includes('rice') || text.includes('quinoa') || text.includes('oat') || text.includes('pasta') || text.includes('banana')) s += 45;
-
-            // TESTOSTERONE SCAN (Healthy Fats + Zinc)
-            if (text.includes('avocado') || text.includes('nuts') || text.includes('oil') || text.includes('egg')) t += 40;
+            const rawData = localStorage.getItem('architect_fuel_v1');
+            const protocolData = rawData ? JSON.parse(rawData) : {};
             
-            return { dopa: Math.min(d, 98), sero: Math.min(s, 95), testo: Math.min(t, 94) };
+            const today = new Date();
+            const todayKey = `kcal count ${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
+            
+            const dayData = protocolData[todayKey];
+            
+            // Baseline si aucune donnée
+            if (!dayData || !dayData.meals || dayData.meals.length === 0) {
+                return { dopa: 15, sero: 18, testo: 12 };
+            }
+
+            let d = 25, s = 25, t = 25; 
+            const text = dayData.meals.map(m => (m.name + (m.ingredients ? m.ingredients.join('') : ''))).join(' ').toLowerCase();
+
+            // DOPAMINE (Tyrosine / Protéines / Caféine)
+            const dopaKeywords = ['salmon', 'saumon', 'egg', 'oeuf', 'meat', 'viande', 'chicken', 'poulet', 'steak', 'coffee', 'café', 'caffeine'];
+            if (dopaKeywords.some(key => text.includes(key))) d += 45;
+
+            // SEROTONIN (Tryptophane / Glucides complexes)
+            const seroKeywords = ['rice', 'riz', 'quinoa', 'oat', 'avoine', 'pasta', 'pâtes', 'banana', 'banane', 'potato', 'pomme de terre'];
+            if (seroKeywords.some(key => text.includes(key))) s += 40;
+
+            // TESTOSTERONE (Graisses saines / Zinc)
+            const testoKeywords = ['avocado', 'avocat', 'nuts', 'noix', 'oil', 'huile', 'egg', 'oeuf', 'broccoli', 'brocoli'];
+            if (testoKeywords.some(key => text.includes(key))) t += 40;
+            
+            return { 
+                dopa: Math.min(d, 98), 
+                sero: Math.min(s, 95), 
+                testo: Math.min(t, 94) 
+            };
         };
 
-        function toggleNav(e) { e.stopPropagation(); document.getElementById('nav-menu').classList.toggle('active'); document.getElementById('trigger').classList.toggle('open'); }
-
-        window.onload = () => {
+        const updateUI = () => {
             const levels = calculateLevels();
             
-            setTimeout(() => {
-                document.getElementById('bar-dopa').style.width = levels.dopa + '%';
-                document.getElementById('val-dopa').innerText = levels.dopa + '%';
+            const animateElement = (id, val, delay) => {
                 setTimeout(() => {
-                    document.getElementById('bar-sero').style.width = levels.sero + '%';
-                    document.getElementById('val-sero').innerText = levels.sero + '%';
-                    setTimeout(() => {
-                        document.getElementById('bar-testo').style.width = levels.testo + '%';
-                        document.getElementById('val-testo').innerText = levels.testo + '%';
-                    }, 200);
-                }, 200);
-            }, 500);
+                    document.getElementById(`bar-${id}`).style.width = val + '%';
+                    document.getElementById(`val-${id}`).innerText = val + '%';
+                }, delay);
+            };
+
+            animateElement('dopa', levels.dopa, 500);
+            animateElement('sero', levels.sero, 700);
+            animateElement('testo', levels.testo, 900);
+        };
+
+        window.onload = updateUI;
+
+        // Fermer le menu si on clique ailleurs
+        window.onclick = () => {
+            document.getElementById('nav-menu').classList.remove('active');
+            document.getElementById('trigger').classList.remove('open');
         };
     </script>
 </body>
