@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fuel | Architect Protocol</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700;800;900&family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
+    <style>
+        :root { --active-green: #10b981; }
+        html, body { position: fixed; width: 100%; height: 100%; overflow: hidden; background: #000; margin: 0; color: #FFF; font-family: 'Inter'; }
+        #dynamic-glow { position: absolute; inset: 0; background: radial-gradient(circle at 50% 10%, rgba(16, 185, 129, 0.12) 0%, transparent 60%); }
+        .content-scroll { position: relative; z-index: 10; height: 100%; overflow-y: auto; padding: 25px; padding-bottom: 150px; }
+        .glass-card { background: rgba(255, 255, 255, 0.01); backdrop-filter: blur(80px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px; padding: 24px; }
+        
+        /* TERMINAL */
+        #scan-overlay { position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.98); display: none; flex-direction: column; align-items: center; justify-content: center; }
+        .diag-line { font-family: 'Syncopate'; font-size: 8px; letter-spacing: 0.2em; margin-bottom: 15px; opacity: 0; color: var(--active-green); }
+        .diag-line.active { opacity: 1; transform: translateX(5px); transition: 0.3s; }
+
+        /* CAMERA */
+        .scan-trigger { width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--active-green); display: flex; align-items: center; justify-content: center; margin: 0 auto 40px; cursor: pointer; }
+        
+        .meal-badge { padding: 4px 10px; border-radius: 4px; font-size: 9px; font-weight: 900; background: rgba(16, 185, 129, 0.1); color: var(--active-green); border: 0.5px solid var(--active-green); text-transform: uppercase; }
+        .label { font-family: 'Syncopate'; font-size: 7px; color: rgba(255,255,255,0.2); text-transform: uppercase; margin-bottom: 5px; display: block; }
+    </style>
+</head>
+<body>
+    <div id="dynamic-glow"></div>
+
+    <div id="scan-overlay">
+        <div class="w-full max-w-xs border-l border-[#10b981] pl-5">
+            <div class="diag-line" id="l1">> ARCHITECT_CORE CONNECTED</div>
+            <div class="diag-line" id="l2">> UPLOADING BIOMASS...</div>
+            <div class="diag-line" id="l3">> GROK_3 ANALYSIS IN PROGRESS...</div>
+            <div class="diag-line" id="l4">> DATA DEPLOYED.</div>
+        </div>
+    </div>
+
+    <input type="file" id="camera-input" accept="image/*" capture="environment" style="display: none;">
+
+    <div class="content-scroll">
+        <header class="mb-12 pt-14 text-center">
+            <p class="font-mono text-[10px] text-[#10b981] tracking-[0.7em] uppercase font-bold">Architect Protocol</p>
+            <h1 class="font-syncopate text-4xl font-bold italic">Fuel Intake</h1>
+        </header>
+
+        <section class="mb-12 text-center">
+            <span id="total-kcal-display" class="font-syncopate font-black text-[28vw] leading-none">0</span>
+            <p class="font-mono text-[11px] text-[#10b981] tracking-[0.8em] uppercase">Kilo-Calories</p>
+        </section>
+
+        <div class="scan-trigger" onclick="document.getElementById('camera-input').click()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </div>
+
+        <div id="meal-list" class="space-y-8"></div>
+    </div>
+
+    <script>
+        let totalDailyKcal = 0;
+
+        document.getElementById('camera-input').onchange = async (e) => {
+            if (e.target.files && e.target.files[0]) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = async () => {
+                    await runDiagnosis(reader.result);
+                };
+            }
+        };
+
+        async function runDiagnosis(base64Image) {
+            const overlay = document.getElementById('scan-overlay');
+            overlay.style.display = 'flex';
+            
+            const lines = ['l1', 'l2', 'l3'];
+            for(let id of lines) {
+                document.getElementById(id).classList.add('active');
+                await new Promise(r => setTimeout(r, 600));
+            }
+
+            try {
+const response = await fetch("/.netlify/functions/analyze", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ image: base64Image })
+});
+
+                const aiResult = await response.json();
+                
+                document.getElementById('l4').classList.add('active');
+                await new Promise(r => setTimeout(r, 600));
+
+                addMealCard(base64Image, aiResult);
+
+            } catch (err) {
+                alert("Erreur: Le serveur n'est pas lancé ou Grok ne répond pas.");
+            } finally {
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    ['l1','l2','l3','l4'].forEach(id => document.getElementById(id).classList.remove('active'));
+                }, 1000);
+            }
+        }
+
+        function addMealCard(img, data) {
+            const list = document.getElementById('meal-list');
+            const card = document.createElement('div');
+            card.className = "glass-card opacity-0 translate-y-5 transition-all duration-1000";
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <span class="meal-badge">Deploy • ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        <h3 class="font-syncopate text-lg font-bold mt-2">${data.name}</h3>
+                    </div>
+                    <div class="text-right">
+                         <span class="font-syncopate font-black text-4xl text-[#10b981]">${data.kcal}</span>
+                         <p class="text-[8px] opacity-30 font-bold">KCAL</p>
+                    </div>
+                </div>
+                <div class="flex gap-6">
+                    <img src="${img}" class="w-24 h-24 rounded-2xl object-cover grayscale contrast-125 border border-white/10">
+                    <div class="flex-1 space-y-4">
+                        <div>
+                            <span class="label">Ingredients</span>
+                            <p class="text-[11px] font-semibold uppercase tracking-wider">${data.ingredients.join(' • ')}</p>
+                        </div>
+                        <div>
+                            <span class="label">Protocol Analysis</span>
+                            <div class="space-y-1">
+                                ${data.pros.map(p => `<p class="text-[10px]"><span class="w-1 h-1 bg-[#10b981] inline-block rounded-full mr-2"></span>${p}</p>`).join('')}
+                                ${data.cons.map(c => `<p class="text-[10px] opacity-40 italic">${c}</p>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            list.prepend(card);
+            setTimeout(() => { 
+                card.style.opacity = "1"; card.style.transform = "translateY(0)";
+                totalDailyKcal += data.kcal;
+                document.getElementById('total-kcal-display').innerText = totalDailyKcal;
+            }, 100);
+        }
+    </script>
+</body>
+</html>

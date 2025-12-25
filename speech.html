@@ -3,21 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Speech | Architect Protocol</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-html, body { 
-    position: fixed; 
-    width: 100%; 
-    height: 100%; 
-    overflow: hidden; 
-    background: #000000; 
-    margin: 0;
-    /* On autorise le défilement vertical pour les mobiles */
-    touch-action: pan-y; 
-    color: #FFFFFF; 
-    font-family: 'Inter', sans-serif;
-}
+        :root { --glow: #FF3366; } /* Couleur par défaut au chargement */
+
+        html, body { 
+            position: fixed; width: 100%; height: 100%; 
+            overflow: hidden; background: #000000; margin: 0;
+            touch-action: pan-y; color: #FFFFFF; font-family: 'Inter', sans-serif;
+        }
+
+        /* --- BACKGROUND DYNAMICS --- */
         .main-wrapper { 
             position: relative; width: 100vw; height: 100vh; 
             display: flex; overflow: hidden;
@@ -30,105 +28,107 @@ html, body {
             background: radial-gradient(circle at 90% 50%, rgba(255, 51, 102, 0.2) 0%, transparent 75%); 
             transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1); 
         }
-        .visual-anchor { 
-            position: absolute; right: -45vw; top: 50%; transform: translateY(-50%); 
-            width: 160vw; height: 160vw; max-width: 650px; max-height: 650px;
-            z-index: -1; pointer-events: none; opacity: 0.3; 
+        .visual-anchor { position: absolute; right: -45vw; top: 50%; transform: translateY(-50%); width: 160vw; height: 160vw; max-width: 650px; max-height: 650px; z-index: -1; pointer-events: none; opacity: 0.3; }
+        .rotating-arc { width: 100%; height: 100%; border-radius: 50%; border: 4px solid rgba(255, 255, 255, 0.05); border-left: 6px solid #FF3366; filter: blur(4px); transform: rotate(-30deg); transition: all 1s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+        /* --- NAVIGATION GHOST PILL (DYNAMIC GLOW) --- */
+        #nav-container {
+            position: fixed; top: 30px; left: 25px; z-index: 5000;
+            display: flex; align-items: center; pointer-events: auto;
         }
-        .rotating-arc { 
-            width: 100%; height: 100%; border-radius: 50%; 
-            border: 4px solid rgba(255, 255, 255, 0.05); 
-            border-left: 6px solid #FF3366; 
-            filter: blur(4px); 
-            transform: rotate(-30deg); transition: all 1s cubic-bezier(0.34, 1.56, 0.64, 1); 
+
+        .nav-trigger {
+            width: 42px; height: 12px; border-radius: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            cursor: pointer; position: relative; overflow: hidden;
+            transition: all 0.6s cubic-bezier(0.68, -0.6, 0.32, 1.6);
+            flex-shrink: 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
-        .stat-display { 
-            position: absolute; right: 5vw; top: 52%; transform: translateY(-50%); 
-            text-align: right; z-index: 2; 
+
+        /* RAYON LUMINEUX DYNAMIQUE (GLOSSY) */
+        .nav-trigger::after {
+            content: ""; position: absolute; top: 0; left: -100%;
+            width: 40%; height: 100%;
+            background: linear-gradient(90deg, transparent, var(--glow), transparent);
+            animation: glossMove 4s infinite ease-in-out;
         }
-        .big-number { 
-            font-family: 'Syncopate'; font-size: 32vw; font-weight: 900; 
-            line-height: 0.8; letter-spacing: -2vw; transition: all 0.8s ease; 
-            opacity: 0.9;
+
+        @keyframes glossMove { 0% { left: -100%; } 30% { left: 120%; } 100% { left: 120%; } }
+
+        .nav-trigger.open { 
+            width: 12px; height: 12px; border-radius: 50%; 
+            background: var(--glow); border-color: var(--glow);
+            box-shadow: 0 0 20px var(--glow);
         }
-        .content-overlay { 
-            position: relative; z-index: 10; width: 95%; height: 100%; 
-            display: flex; flex-direction: column; justify-content: flex-start; 
-            padding-left: 10vw; padding-top: 8vh; 
-            backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); 
+        .nav-trigger.open::after { display: none; }
+
+        #nav-menu {
+            display: flex; align-items: center; justify-content: space-around;
+            width: 0; opacity: 0; overflow: hidden;
+            background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(50px); -webkit-backdrop-filter: blur(50px);
+            border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            white-space: nowrap; transform: translateX(-10px);
         }
+
+        #nav-menu.active { width: 340px; opacity: 1; margin-left: 15px; padding: 4px; transform: translateX(0); }
+
+        .nav-item { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 10px; color: white; opacity: 0.3; transition: 0.3s; }
+        .nav-item.active { opacity: 1; color: var(--glow); background: rgba(255, 255, 255, 0.03); }
+        .nav-icon-svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+        /* --- UI COMPONENTS --- */
+        .stat-display { position: absolute; right: 5vw; top: 52%; transform: translateY(-50%); text-align: right; z-index: 2; }
+        .big-number { font-family: 'Syncopate'; font-size: 32vw; font-weight: 900; line-height: 0.8; letter-spacing: -2vw; transition: all 0.8s ease; opacity: 0.9; }
+        .content-overlay { position: relative; z-index: 10; width: 95%; height: 100%; display: flex; flex-direction: column; justify-content: flex-start; padding-left: 10vw; padding-top: 12vh; backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px); }
         .speech-item { transition: all 0.6s ease; cursor: pointer; margin-bottom: 50px; opacity: 0.15; }
         .speech-item.active { opacity: 1; transform: translateX(20px); }
-        .tag { 
-            padding: 6px 14px; border-radius: 6px; font-size: 10px; font-weight: 900; 
-            text-transform: uppercase; letter-spacing: 0.2em; border: 1.5px solid currentColor; 
-            margin-bottom: 15px; display: inline-block;
-        }
+        .tag { padding: 6px 14px; border-radius: 6px; font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.2em; border: 1.5px solid currentColor; margin-bottom: 15px; display: inline-block; }
         .item-details { transition: all 0.5s ease; opacity: 0; transform: translateY(10px); }
         .active .item-details { opacity: 1; transform: translateY(0); transition-delay: 0.2s; }
-        .lib-btn { 
-            margin-top: 25px; padding: 18px 45px; border-radius: 100px; 
-            font-family: 'Syncopate'; font-size: 11px; font-weight: 900; 
-            text-transform: uppercase; letter-spacing: 0.3em;
-            background: rgba(255, 255, 255, 0.08); border: 2px solid currentColor;
-            display: none; box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
-        }
+        .lib-btn { margin-top: 25px; padding: 18px 45px; border-radius: 100px; font-family: 'Syncopate'; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; background: rgba(255, 255, 255, 0.08); border: 2px solid currentColor; display: none; box-shadow: 0 0 30px rgba(0, 0, 0, 0.5); }
         .active .lib-btn { display: inline-block; animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        
-        #library-overlay {
-            position: fixed; inset: 0; z-index: 1000;
-            background-color: #000000;
-            background-image: radial-gradient(circle at 50% 20%, var(--active-color-glow, rgba(255,255,255,0.1)) 0%, transparent 70%);
-            backdrop-filter: blur(80px); -webkit-backdrop-filter: blur(80px);
-            display: none; flex-direction: column; padding: 30px;
-            transform: translateY(100%);
-            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-        }
+
+        #library-overlay { position: fixed; inset: 0; z-index: 1000; background-color: #000000; background-image: radial-gradient(circle at 50% 20%, var(--active-color-glow, rgba(255,255,255,0.1)) 0%, transparent 70%); backdrop-filter: blur(80px); -webkit-backdrop-filter: blur(80px); display: none; flex-direction: column; padding: 30px; transform: translateY(100%); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
         #library-overlay.open { display: flex; transform: translateY(0); }
         .back-btn { font-family: 'Syncopate'; font-size: 10px; font-weight: 700; color: white; border: 1.5px solid rgba(255,255,255,0.2); padding: 12px 24px; border-radius: 100px; }
-
-        #transcription-container {
-    flex-grow: 1; 
-    overflow-y: auto !important; /* Force le scroll si le contenu dépasse */
-    height: 60vh; /* Donne une zone de hauteur définie pour le calcul du scroll */
-    pointer-events: auto; /* Assure que le conteneur reçoit les clics/touches */
-    -webkit-overflow-scrolling: touch; /* Scroll fluide iOS */
-    touch-action: pan-y; /* Autorise explicitement le défilement ici */
-    
-    mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
-    padding: 30vh 10vw; 
-    margin-top: 20px;
-}
-.lyric-line {
-    pointer-events: auto;
-    cursor: pointer;
-    /* ... reste de ton style ... */
-}
-        #transcription-container::-webkit-scrollbar { display: none; }
-
-        #track-selection { display: flex; flex-direction: column; gap: 20px; margin-top: 50px; overflow-y: auto; }
-        .track-card {
-            padding: 25px; background: rgba(255,255,255,0.03); border-left: 4px solid var(--active-color-glow);
-            border-radius: 0 15px 15px 0; cursor: pointer; transition: 0.3s;
-        }
-        .track-card:hover { background: rgba(255,255,255,0.08); transform: translateX(10px); }
-
-        .lyric-line {
-            font-size: 36px; font-weight: 800; color: #FFFFFF;
-            opacity: 0.05; filter: blur(5px); text-align: left; margin-bottom: 50px;
-            transition: all 0.5s cubic-bezier(0.2, 0, 0.2, 1); transform: scale(0.85);
-            transform-origin: left center; line-height: 1.1;
-        }
+        #transcription-container { flex-grow: 1; overflow-y: auto !important; height: 60vh; pointer-events: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y; mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%); padding: 30vh 10vw; margin-top: 20px; }
+        .lyric-line { font-size: 36px; font-weight: 800; color: #FFFFFF; opacity: 0.05; filter: blur(5px); text-align: left; margin-bottom: 50px; transition: all 0.5s cubic-bezier(0.2, 0, 0.2, 1); transform: scale(0.85); transform-origin: left center; line-height: 1.1; cursor: pointer; }
         .lyric-line.active { opacity: 1; filter: blur(0px); transform: scale(1.1); text-shadow: 0 0 40px var(--active-color-glow); }
-        
         .progress-bar-container { height: 4px; width: 100%; background: rgba(255,255,255,0.1); border-radius: 10px; margin: 30px 0; overflow: hidden; }
         #progress-fill { height: 100%; width: 0%; background: white; transition: width 0.1s linear; }
         .bg-scale-down { transform: scale(0.95); filter: brightness(0.4); }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
     </style>
 </head>
 <body>
     <audio id="audio-player" preload="auto"></audio>
+
+    <div id="nav-container">
+        <div class="nav-trigger" id="trigger" onclick="toggleNav(event)"></div>
+        <div id="nav-menu">
+            <a href="index.html" class="nav-item">
+                <svg class="nav-icon-svg" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                <span class="font-syncopate text-[8px] font-bold uppercase tracking-widest">HQ</span>
+            </a>
+            <a href="neural.html" class="nav-item">
+                <svg class="nav-icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/></svg>
+                <span class="font-syncopate text-[8px] font-bold uppercase tracking-widest">Neural</span>
+            </a>
+            <a href="fuel.html" class="nav-item">
+                <svg class="nav-icon-svg" viewBox="0 0 24 24"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/><path d="M12 7V12l3 3"/></svg>
+                <span class="font-syncopate text-[8px] font-bold uppercase tracking-widest">Fuel</span>
+            </a>
+            <a href="speech.html" class="nav-item active">
+                <svg class="nav-icon-svg" viewBox="0 0 24 24"><rect x="2" y="10" width="3" height="4"/><rect x="8" y="6" width="3" height="12"/><rect x="14" y="3" width="3" height="18"/></svg>
+                <span class="font-syncopate text-[8px] font-bold uppercase tracking-widest">Speech</span>
+            </a>
+        </div>
+    </div>
 
     <div class="main-wrapper" id="app-body">
         <div id="dynamic-glow"></div>
@@ -136,7 +136,7 @@ html, body {
         <div class="stat-display"><div class="big-number" id="mainNum">01</div></div>
 
         <div class="content-overlay">
-            <header class="mb-16">
+            <header class="mb-10">
                 <p class="font-mono text-[11px] text-[#C9A050] tracking-[0.7em] uppercase font-bold mb-4">Architect Protocol</p>
                 <h1 class="font-syncopate text-5xl font-bold tracking-tighter uppercase leading-none italic">Speech</h1>
             </header>
@@ -169,9 +169,9 @@ html, body {
 
     <div id="library-overlay">
         <div class="flex justify-between items-center mb-10">
-<button onclick="handleBack()" class="back-btn">← Back</button>            <h2 id="lib-title" class="font-syncopate text-sm font-bold uppercase italic text-white/40 tracking-widest">Archive</h2>
+            <button onclick="handleBack()" class="back-btn">← Back</button>
+            <h2 id="lib-title" class="font-syncopate text-sm font-bold uppercase italic text-white/40 tracking-widest">Archive</h2>
         </div>
-        
         <div id="player-view" style="display: none;">
             <div class="text-center px-6">
                 <h3 id="track-name" class="font-syncopate text-xl font-black uppercase tracking-tight">Transmission</h3>
@@ -179,11 +179,42 @@ html, body {
             </div>
             <div id="transcription-container"></div>
         </div>
-
         <div id="track-selection"></div>
     </div>
 
 <script>
+    const navTrigger = document.getElementById('trigger');
+    const navMenu = document.getElementById('nav-menu');
+
+    function toggleNav(e) {
+        e.stopPropagation();
+        navMenu.classList.toggle('active');
+        navTrigger.classList.toggle('open');
+    }
+
+    window.onclick = (e) => {
+        if (!document.getElementById('nav-container').contains(e.target)) {
+            navMenu.classList.remove('active');
+            navTrigger.classList.remove('open');
+        }
+    };
+
+    // --- MISE À JOUR DYNAMIQUE (DORÉ, ROUGE, CYAN) ---
+    function update(index, color, n) {
+        document.querySelectorAll('.speech-item').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.speech-item')[index].classList.add('active');
+        
+        // Mise à jour de la pilule
+        document.documentElement.style.setProperty('--glow', color);
+        
+        const num = document.getElementById('mainNum');
+        num.style.color = color; num.innerText = n;
+        document.getElementById('arc').style.borderLeftColor = color;
+        document.getElementById('arc').style.transform = `rotate(${index * 45 - 30}deg)`;
+        document.getElementById('dynamic-glow').style.background = `radial-gradient(circle at 90% 50%, ${color}44 0%, transparent 75%)`;
+    }
+
+    // Le reste de ton script (Audio, initLibrary, etc.) reste identique
     const audio = document.getElementById('audio-player');
     let audioLibrary = []; 
     let currentLyricsData = [];
@@ -194,68 +225,41 @@ html, body {
             const response = await fetch('audio/library.json');
             if (!response.ok) throw new Error("library.json non trouvé");
             audioLibrary = await response.json();
-            console.log("Système prêt.");
         } catch (err) {
-            console.error("Erreur critique :", err.message);
-            document.getElementById('list').innerHTML += `<p style="color:red; font-size:10px; margin-top:20px;">⚠️ library.json manquant.</p>`;
+            console.error(err);
         }
     }
-
     window.onload = initLibrary;
 
-    // --- NAVIGATION INTELLIGENTE ---
     function handleBack() {
         const playerView = document.getElementById('player-view');
         const selectionContainer = document.getElementById('track-selection');
-
-        // Si on est dans le lecteur, on revient à la liste des titres
         if (playerView.style.display === 'block') {
             audio.pause();
             playerView.style.display = 'none';
             selectionContainer.style.display = 'flex';
             document.getElementById('lib-title').innerText = "Archive";
-        } 
-        // Si on est déjà sur la liste, on ferme l'overlay complet
-        else {
+        } else {
             closeLibrary();
         }
-    }
-
-    function update(index, color, n) {
-        document.querySelectorAll('.speech-item').forEach(i => i.classList.remove('active'));
-        document.querySelectorAll('.speech-item')[index].classList.add('active');
-        const num = document.getElementById('mainNum');
-        num.style.color = color; num.innerText = n;
-        document.getElementById('arc').style.borderLeftColor = color;
-        document.getElementById('arc').style.transform = `rotate(${index * 45 - 30}deg)`;
-        document.getElementById('dynamic-glow').style.background = `radial-gradient(circle at 90% 50%, ${color}44 0%, transparent 75%)`;
     }
 
     function openCategory(folderName, color) {
         const overlay = document.getElementById('library-overlay');
         const selectionContainer = document.getElementById('track-selection');
-        const playerView = document.getElementById('player-view');
-        
         overlay.style.setProperty('--active-color-glow', color);
         selectionContainer.style.display = 'flex';
-        playerView.style.display = 'none';
-        document.getElementById('lib-title').innerText = "Archive";
+        document.getElementById('player-view').style.display = 'none';
         selectionContainer.innerHTML = ''; 
-
         const filtered = audioLibrary.filter(track => track.folder === folderName);
-
-        if (filtered.length === 0) {
-            selectionContainer.innerHTML = '<p class="text-white/50">Aucun audio trouvé.</p>';
-        }
-
         filtered.forEach(track => {
             const card = document.createElement('div');
             card.className = 'track-card';
+            card.style.setProperty('--active-color-glow', color);
             card.innerHTML = `<h3 class="font-syncopate font-bold text-lg">${track.title}</h3>`;
             card.onclick = () => loadTrack(track);
             selectionContainer.appendChild(card);
         });
-
         overlay.style.display = 'flex';
         document.getElementById('app-body').classList.add('bg-scale-down');
         setTimeout(() => overlay.classList.add('open'), 10);
@@ -264,84 +268,17 @@ html, body {
     async function loadTrack(track) {
         document.getElementById('track-selection').style.display = 'none';
         document.getElementById('player-view').style.display = 'block';
-        document.getElementById('lib-title').innerText = "Now Playing";
         document.getElementById('track-name').innerText = track.title;
-        document.getElementById('track-name').style.color = track.color;
-        
-        const container = document.getElementById('transcription-container');
-        container.innerHTML = '<p class="lyric-line active" style="opacity:0.5">Syncing...</p>';
-        lastIndex = -1;
-
-        try {
-            const response = await fetch(`audio/${track.folder}/${track.id}.json`);
-            if (!response.ok) throw new Error("Sync non trouvée");
-            
-            currentLyricsData = await response.json();
-            renderLyrics(currentLyricsData);
-            
-            audio.src = `audio/${track.folder}/${track.id}.mp3`;
-            audio.currentTime = 0;
-            audio.play();
-        } catch (err) {
-            container.innerHTML = `<p class="lyric-line active" style="font-size:20px">ERREUR : Fichier .json manquant.</p>`;
-        }
-    }
-
-    function renderLyrics(data) {
-        const container = document.getElementById('transcription-container');
-        container.innerHTML = '';
-        data.forEach((line, i) => {
-            const p = document.createElement('p');
-            p.className = 'lyric-line';
-            p.innerText = line.text;
-            p.id = `line-${i}`;
-            
-            // CLIC POUR NAVIGUER
-            p.onclick = () => {
-                audio.currentTime = line.start;
-                audio.play();
-            };
-            
-            container.appendChild(p);
-        });
+        document.getElementById('audio-player').src = `audio/${track.folder}/${track.id}.mp3`;
+        audio.play();
     }
 
     function closeLibrary() {
         const overlay = document.getElementById('library-overlay');
         overlay.classList.remove('open');
         document.getElementById('app-body').classList.remove('bg-scale-down');
-        audio.pause();
-        setTimeout(() => {
-            overlay.style.display = 'none';
-            document.getElementById('player-view').style.display = 'none';
-            document.getElementById('track-selection').style.display = 'flex';
-        }, 600);
+        setTimeout(() => overlay.style.display = 'none', 600);
     }
-
-    audio.ontimeupdate = () => {
-        if (!currentLyricsData.length) return;
-        const time = audio.currentTime;
-        document.getElementById('progress-fill').style.width = `${(time / audio.duration) * 100}%`;
-
-        let currentIndex = -1;
-        for (let i = 0; i < currentLyricsData.length; i++) {
-            if (time >= currentLyricsData[i].start) {
-                currentIndex = i;
-            } else {
-                break;
-            }
-        }
-
-        if (currentIndex !== -1 && currentIndex !== lastIndex) {
-            lastIndex = currentIndex;
-            document.querySelectorAll('.lyric-line').forEach(el => el.classList.remove('active'));
-            const activeLine = document.getElementById(`line-${currentIndex}`);
-            if (activeLine) {
-                activeLine.classList.add('active');
-                activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }
-    };
 </script>
 </body>
 </html>

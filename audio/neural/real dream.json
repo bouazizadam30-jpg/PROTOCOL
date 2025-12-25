@@ -1,7 +1,7 @@
 [
     {
         "start": 0.0,
-        "text": "The dream is going to be a little bit more difficult."
+        "text": "The dream is not to have a Lambo."
     },
     {
         "start": 2.0,
@@ -25,11 +25,11 @@
     },
     {
         "start": 20.8,
-        "text": "And to achieve this dream, you don't have to go and die in a ditch and you crane."
+        "text": "And to achieve this dream, you don't have to go and die in a ditch in Ukrain."
     },
     {
         "start": 25.3,
-        "text": "You don't have to climb out Everest."
+        "text": "You don't have to climb Mount Everest."
     },
     {
         "start": 27.0,
@@ -37,6 +37,6 @@
     },
     {
         "start": 29.2,
-        "text": "And you're still fail."
+        "text": "And you still fail."
     }
 ]
