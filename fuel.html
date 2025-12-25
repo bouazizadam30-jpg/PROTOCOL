@@ -110,8 +110,7 @@
     // --- PROFIL ARCHITECTE (DÉFAUT) ---
     const profile = { weight: 75, height: 180, age: 25, sex: 'H', activity: 1.2, objective: 'Loss' };
     
-    let protocolData = JSON.parse(localStorage.getItem('architect_fuel_v1')) || {};
-    let debugDateOffset = 0;
+let protocolData = JSON.parse(localStorage.getItem('architect_fuel_v1')) || {};    let debugDateOffset = 0;
 
     // --- MIFFLIN-ST JEOR CALCULATOR ---
     function calculateDailyTarget() {
