@@ -236,54 +236,79 @@
     }
 
     function renderHistory() {
-        const list = document.getElementById('meal-list');
-        list.innerHTML = '';
-        const todayKey = getTodayKey();
-        Object.keys(protocolData).sort((a,b) => b.localeCompare(a)).forEach(date => {
-            const day = protocolData[date];
-            const isOpen = date === todayKey;
-            const folderId = `folder-${date.replace(/\//g, '-')}`;
-            const dayTotal = day.meals.reduce((s,m)=>s+m.kcal,0);
-            
-            const section = document.createElement('div');
-            section.innerHTML = `
-                <div class="day-folder-header ${isOpen ? 'open' : ''}" onclick="this.nextElementSibling.classList.toggle('open'); this.classList.toggle('open')">
-                    <span class="font-syncopate text-[10px] font-bold flex items-center">
-                        <span class="folder-arrow mr-3">▶</span>${date}
-                    </span>
-                    <span class="font-syncopate text-[9px] opacity-40">${dayTotal} KCAL</span>
+    const list = document.getElementById('meal-list');
+    list.innerHTML = '';
+    const todayKey = getTodayKey();
+    Object.keys(protocolData).sort((a,b) => b.localeCompare(a)).forEach(date => {
+        const day = protocolData[date];
+        const isOpen = date === todayKey;
+        const folderId = `folder-${date.replace(/\//g, '-')}`;
+        const dayTotal = day.meals.reduce((s,m)=>s+m.kcal,0);
+        
+        const section = document.createElement('div');
+        section.innerHTML = `
+            <div class="day-folder-header ${isOpen ? 'open' : ''}" onclick="toggleFolder('${folderId}')">
+                <span class="font-syncopate text-[10px] font-bold flex items-center"><span class="folder-arrow mr-3">▶</span>${date}</span>
+                <span class="font-syncopate text-[9px] opacity-40">${dayTotal} KCAL</span>
+            </div>
+            <div id="${folderId}" class="day-folder-content ${isOpen ? 'open' : ''} space-y-4">
+                ${day.meals.map(m => `
+                    <div class="glass-card">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="meal-badge">Deploy • ${m.time}</span>
+                            <span class="font-syncopate font-black text-3xl text-white">${m.kcal}</span>
+                        </div>
+                        <div class="flex gap-4">
+                            <img src="${m.img}" class="w-20 h-20 rounded-xl object-cover grayscale">
+                            <div class="flex-1"><h3 class="font-syncopate text-[10px] text-[#10b981]">${m.name}</h3><p class="text-[8px] opacity-50 uppercase mt-1 tracking-tighter">${m.ingredients.join(' • ')}</p></div>
+                        </div>
+                    </div>`).join('')}
+                
+                <button onclick="generateReport('${date}')" class="w-full py-4 border border-[#10b981]/30 rounded-xl font-syncopate text-[8px] tracking-[0.3em] hover:bg-[#10b981]/10 uppercase transition-all">Generate Biologic Report</button>
+                
+                <div id="report-${date.replace(/\//g, '-')}" class="mt-4">
+                    ${day.report ? `
+                    <div class="report-card animate-entrance">
+                        <div class="flex justify-between items-center mb-6">
+                            <span class="label">Protocol Rating</span>
+                            <span class="text-[#10b981] font-syncopate font-black text-2xl">${day.report.score}/10</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-4 mb-6">
+                            <div>
+                                <span class="label !text-[6px]">Dopamine</span>
+                                <div class="h-1 bg-white/10 w-full rounded-full mt-1 overflow-hidden">
+                                    <div class="h-full bg-cyan-400" style="width: ${day.report.neural.dopamine}%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="label !text-[6px]">Serotonin</span>
+                                <div class="h-1 bg-white/10 w-full rounded-full mt-1 overflow-hidden">
+                                    <div class="h-full bg-pink-500" style="width: ${day.report.neural.serotonin}%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="label !text-[6px]">Testo</span>
+                                <div class="h-1 bg-white/10 w-full rounded-full mt-1 overflow-hidden">
+                                    <div class="h-full bg-orange-500" style="width: ${day.report.neural.testo}%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="text-[#10b981] text-[10px] font-bold mb-2 uppercase tracking-widest">${day.report.status}</p>
+                        <p class="text-[11px] font-bold mb-4 tracking-tighter">${day.report.summary}</p>
+                        <span class="label">Metabolic Status</span><p class="text-[10px] mb-4 opacity-80">${day.report.metabolic}</p>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><span class="label text-green-400">Pros</span><p class="text-[9px] uppercase">${day.report.pros}</p></div>
+                            <div><span class="label text-red-400">Cons</span><p class="text-[9px] uppercase">${day.report.cons}</p></div>
+                        </div>
+                    </div>` : ''}
                 </div>
-                <div id="${folderId}" class="day-folder-content ${isOpen ? 'open' : ''} space-y-4">
-                    ${day.meals.map(m => `
-                        <div class="glass-card">
-                            <div class="flex justify-between items-start mb-4">
-                                <span class="meal-badge">Deploy • ${m.time}</span>
-                                <span class="font-syncopate font-black text-3xl text-white">${m.kcal}</span>
-                            </div>
-                            <div class="flex gap-4">
-                                <img src="${m.img}" class="w-20 h-20 rounded-xl object-cover grayscale">
-                                <div class="flex-1"><h3 class="font-syncopate text-[10px] text-[#10b981]">${m.name}</h3><p class="text-[8px] opacity-50 mt-1 uppercase">${m.ingredients.join(' • ')}</p></div>
-                            </div>
-                        </div>`).join('')}
-                    <button onclick="generateReport('${date}')" class="w-full py-4 border border-[#10b981]/30 rounded-xl font-syncopate text-[8px] tracking-[0.3em] hover:bg-[#10b981]/10 uppercase transition-all">Generate Architect Report</button>
-                    <div id="report-${date.replace(/\//g, '-')}" class="mt-4">
-                        ${day.report ? `
-                        <div class="report-card animate-entrance">
-                            <div class="flex justify-between items-center mb-3">
-                                <span class="label">Protocol Rating</span><span class="text-[#10b981] font-syncopate font-black text-2xl">${day.report.score}/10</span>
-                            </div>
-                            <p class="text-[11px] italic opacity-80 mb-4">"${day.report.summary}"</p>
-                            <span class="label">Biologic Impact</span><p class="text-[10px] mb-4">${day.report.bodyImpact}</p>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div><span class="label text-green-400">Pros</span><p class="text-[9px]">${day.report.pros}</p></div>
-                                <div><span class="label text-red-400">Cons</span><p class="text-[9px]">${day.report.cons}</p></div>
-                            </div>
-                        </div>` : ''}
-                    </div>
-                </div>`;
-            list.appendChild(section);
-        });
-    }
+            </div>`;
+        list.appendChild(section);
+    });
+}
 
     function updateTotalDisplay() {
         const todayKey = getTodayKey();

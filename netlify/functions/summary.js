@@ -3,18 +3,26 @@ exports.handler = async (event) => {
         const { meals, totalKcal, targetKcal, profile } = JSON.parse(event.body);
         const apiKey = process.env.GROK_API_KEY;
 
-        const prompt = `Act as Architect Protocol Coach. 
-        Analyze Day: ${meals.map(m => m.name).join(', ')}. 
-        Stats: ${totalKcal}kcal consumed vs ${targetKcal}kcal target.
-        Objective: ${profile.objective}.
+        const prompt = `Act as Architect Neuro-Nutritionist. 
+        Analyze BIOMASS: ${meals.map(m => m.name).join(', ')}. 
+        Stats: ${totalKcal}kcal vs ${targetKcal}kcal target.
         
-        Provide report in Keywords only. NO SENTENCES.
+        Estimate Neuro-Hormonal Impact (0-100%):
+        - DOPAMINE: Based on Tyrosine/Protein/Caffeine.
+        - SEROTONIN: Based on Tryptophan/Carb-Ratio/B6.
+        - TESTOSTERONE: Based on Healthy Fats/Zinc/Magnesium/CICO.
+
         Format JSON:
         {
           "score": 0-10,
-          "status": "PERFECT / HIGH QUALITY / OFF TARGET",
-          "summary": "KEYWORD1 • KEYWORD2 • KEYWORD3",
-          "bodyImpact": "METABOLIC STATUS • HORMONAL RESPONSE",
+          "status": "STATUS_KEYWORD",
+          "summary": "KEYWORD1 • KEYWORD2",
+          "neural": {
+            "dopamine": 0-100,
+            "serotonin": 0-100,
+            "testo": 0-100
+          },
+          "metabolic": "METABOLIC_KEYWORD • GLYCEMIC_LOAD",
           "pros": "KEYWORD • KEYWORD",
           "cons": "KEYWORD • KEYWORD"
         }`;
@@ -25,7 +33,7 @@ exports.handler = async (event) => {
             body: JSON.stringify({
                 model: "grok-2-vision-1212",
                 messages: [{ role: "user", content: prompt }],
-                temperature: 0.3
+                temperature: 0.2
             })
         });
 
