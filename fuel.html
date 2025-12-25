@@ -18,9 +18,25 @@
         .diag-line { font-family: 'Syncopate'; font-size: 8px; letter-spacing: 0.2em; margin-bottom: 15px; opacity: 0; color: var(--active-green); }
         .diag-line.active { opacity: 1; transform: translateX(5px); transition: 0.3s; }
 
-        /* CAMERA */
-        .scan-trigger { width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--active-green); display: flex; align-items: center; justify-content: center; margin: 0 auto 40px; cursor: pointer; }
+        /* CAMERA TRIGGER */
+        .scan-trigger { width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--active-green); display: flex; align-items: center; justify-content: center; margin: 0 auto 40px; cursor: pointer; background: rgba(16, 185, 129, 0.05); transition: 0.3s; }
+        .scan-trigger:active { transform: scale(0.9); background: rgba(16, 185, 129, 0.2); }
         
+        /* PILL BUTTON CUSTOM */
+        .pill-nav {
+            position: fixed; bottom: 35px; left: 50%; transform: translateX(-50%);
+            z-index: 100; display: flex; align-items: center; gap: 15px;
+            padding: 12px 28px; background: rgba(0, 0, 0, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 100px;
+            backdrop-filter: blur(20px); text-decoration: none;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .pill-nav:hover { border-color: var(--active-green); box-shadow: 0 0 25px rgba(16, 185, 129, 0.2); }
+        .pill-nav span { font-family: 'Syncopate'; font-size: 9px; font-weight: 700; letter-spacing: 0.4em; color: #FFF; text-transform: uppercase; }
+        .pill-dot { width: 6px; height: 6px; background: var(--active-green); border-radius: 50%; box-shadow: 0 0 10px var(--active-green); animation: pulse 2s infinite; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
         .meal-badge { padding: 4px 10px; border-radius: 4px; font-size: 9px; font-weight: 900; background: rgba(16, 185, 129, 0.1); color: var(--active-green); border: 0.5px solid var(--active-green); text-transform: uppercase; }
         .label { font-family: 'Syncopate'; font-size: 7px; color: rgba(255,255,255,0.2); text-transform: uppercase; margin-bottom: 5px; display: block; }
     </style>
@@ -36,6 +52,11 @@
             <div class="diag-line" id="l4">> DATA DEPLOYED.</div>
         </div>
     </div>
+
+    <a href="index.html" class="pill-nav">
+        <div class="pill-dot"></div>
+        <span>Core Protocol</span>
+    </a>
 
     <input type="file" id="camera-input" accept="image/*" capture="environment" style="display: none;">
 
@@ -60,28 +81,27 @@
     <script>
         let totalDailyKcal = 0;
 
-       document.getElementById('camera-input').onchange = async (e) => {
-    if (e.target.files && e.target.files[0]) {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = async () => {
-            const img = new Image();
-            img.src = reader.result;
-            img.onload = async () => {
-                // Compression de l'image pour Netlify (max 6MB)
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                const scale = Math.min(1, 1200 / Math.max(img.width, img.height));
-                canvas.width = img.width * scale;
-                canvas.height = img.height * scale;
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                await runDiagnosis(compressedBase64);
-            };
+        document.getElementById('camera-input').onchange = async (e) => {
+            if (e.target.files && e.target.files[0]) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = async () => {
+                    const img = new Image();
+                    img.src = reader.result;
+                    img.onload = async () => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        const scale = Math.min(1, 1200 / Math.max(img.width, img.height));
+                        canvas.width = img.width * scale;
+                        canvas.height = img.height * scale;
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                        await runDiagnosis(compressedBase64);
+                    };
+                };
+            }
         };
-    }
-};
 
         async function runDiagnosis(base64Image) {
             const overlay = document.getElementById('scan-overlay');
@@ -94,21 +114,19 @@
             }
 
             try {
-const response = await fetch("/.netlify/functions/analyze", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ image: base64Image })
-});
+                const response = await fetch("/.netlify/functions/analyze", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ image: base64Image })
+                });
 
                 const aiResult = await response.json();
-                
                 document.getElementById('l4').classList.add('active');
                 await new Promise(r => setTimeout(r, 600));
-
                 addMealCard(base64Image, aiResult);
 
             } catch (err) {
-                alert("Erreur: Le serveur n'est pas lancé ou Grok ne répond pas.");
+                alert("Erreur de liaison Cloud. Vérifie tes variables Netlify.");
             } finally {
                 setTimeout(() => {
                     overlay.style.display = 'none';
