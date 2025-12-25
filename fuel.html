@@ -102,178 +102,168 @@
 
         <div id="meal-list" class="space-y-4"></div>
     </div>
+<style>
+    /* ... tes styles existants ... */
+    
+    /* CALENDAR PREMIUM GLASS */
+    #calendar-overlay { 
+        position: fixed; inset: 0; z-index: 6000; background: rgba(0,0,0,0.9);
+        backdrop-filter: blur(80px); display: none; flex-direction: column;
+        padding: 100px 25px 50px; animation: pageEnter 0.6s ease;
+    }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-top: 30px; }
+    .calendar-day { 
+        aspect-ratio: 1; border-radius: 12px; background: rgba(255,255,255,0.03); 
+        border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column;
+        align-items: center; justify-content: center; font-family: 'Syncopate'; font-size: 8px;
+    }
+    .calendar-day.has-data { border-color: var(--active-green); }
+    .day-score { font-size: 10px; font-weight: 900; color: var(--active-green); margin-top: 2px; }
+
+    /* UI FIXES */
+    .day-folder-content { overflow: hidden; max-height: 0; transition: max-height 0.5s ease-out; }
+    .day-folder-content.open { max-height: 2000px; }
+    
+    .report-card { 
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, transparent 100%);
+        border-left: 2px solid var(--active-green); padding: 20px; border-radius: 0 15px 15px 0; margin-top: 15px;
+    }
+</style>
+
+<div id="calendar-overlay">
+    <div class="flex justify-between items-center mb-8">
+        <h2 class="font-syncopate text-xl italic font-bold">SYSTEM LOGS</h2>
+        <button onclick="toggleCalendar()" class="back-btn">CLOSE</button>
+    </div>
+    <div id="calendar-render"></div>
+</div>
 
 <script>
     let protocolData = JSON.parse(localStorage.getItem('architect_fuel_v1')) || {};
     let debugDateOffset = 0;
 
-    function getTodayKey() {
-        const d = new Date();
-        d.setDate(d.getDate() + debugDateOffset);
-        return `kcal count ${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+    function toggleCalendar() {
+        const el = document.getElementById('calendar-overlay');
+        el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
+        if(el.style.display === 'flex') renderCalendar();
     }
 
-    // --- PRECISION ENGINE ---
-    function precisionJitter(kcal) {
-        if (kcal % 10 === 0) {
-            const variations = [-3, -2, -1, 1, 2, 3, 4, 7];
-            return kcal + variations[Math.floor(Math.random() * variations.length)];
-        }
-        return kcal;
-    }
-
-    function toggleNav(e) {
-        e.stopPropagation();
-        document.getElementById('nav-menu').classList.toggle('active');
-        document.getElementById('trigger').classList.toggle('open');
-    }
-
-    window.onload = () => {
-        renderHistory();
-        updateTotalDisplay();
-        addDebugControls();
-    };
-
-    function addDebugControls() {
-        const debugDiv = document.createElement('div');
-        debugDiv.style = "position:fixed; bottom:10px; right:10px; z-index:9999; display:flex; gap:10px; opacity:0.2;";
-        debugDiv.innerHTML = `
-            <button onclick="simulateDate(-1)" style="font-size:7px; border:1px solid #fff; padding:5px;">TEST: HIER</button>
-            <button onclick="simulateDate(0)" style="font-size:7px; border:1px solid #fff; padding:5px;">RESET</button>
+    function renderCalendar() {
+        const container = document.getElementById('calendar-render');
+        const now = new Date();
+        container.innerHTML = `
+            <p class="font-syncopate text-[10px] tracking-[0.5em] opacity-40 uppercase mb-4">${now.toLocaleString('default', { month: 'long' })} ${now.getFullYear()}</p>
+            <div class="calendar-grid" id="grid-days"></div>
         `;
-        document.body.appendChild(debugDiv);
-    }
+        
+        const grid = document.getElementById('grid-days');
+        for(let i = 1; i <= 31; i++) {
+            const dateStr = `${i.toString().padStart(2, '0')}/${(now.getMonth()+1).toString().padStart(2, '0')}/${now.getFullYear()}`;
+            const key = `kcal count ${dateStr}`;
+            const hasData = protocolData[key];
+            const score = hasData?.report?.score || "";
 
-    function simulateDate(offset) {
-        debugDateOffset = offset;
-        renderHistory();
-        updateTotalDisplay();
-    }
-
-    function updateTotalDisplay() {
-        const todayKey = getTodayKey();
-        const meals = protocolData[todayKey]?.meals || [];
-        const total = meals.reduce((sum, m) => sum + m.kcal, 0);
-        document.getElementById('total-kcal-display').innerText = total;
-    }
-
-    function toggleFolder(id) {
-        const content = document.getElementById(id);
-        const header = content.previousElementSibling;
-        content.classList.toggle('open');
-        header.classList.toggle('open');
-    }
-
-    document.getElementById('camera-input').onchange = async (e) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = async () => {
-                const img = new Image();
-                img.src = reader.result;
-                img.onload = async () => {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    const scale = Math.min(1, 800 / Math.max(img.width, img.height));
-                    canvas.width = img.width * scale;
-                    canvas.height = img.height * scale;
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
-                    await runDiagnosis(compressedBase64);
-                };
-            };
+            grid.innerHTML += `
+                <div class="calendar-day ${hasData ? 'has-data' : ''}" onclick="jumpToDate('${key}')">
+                    <span class="opacity-30">${i}</span>
+                    <span class="day-score">${score}</span>
+                </div>
+            `;
         }
-    };
+    }
 
-    async function runDiagnosis(base64Image) {
-        const overlay = document.getElementById('scan-overlay');
-        overlay.style.display = 'flex';
-        const lines = ['l1', 'l2', 'l3'];
-        for(let id of lines) {
-            document.getElementById(id).classList.add('active');
-            await new Promise(r => setTimeout(r, 600));
+    function jumpToDate(key) {
+        toggleCalendar();
+        // Optionnel : scroller vers le dossier
+        const folder = document.getElementById(`folder-${key.replace(/\//g, '-')}`);
+        if(folder) {
+            folder.classList.add('open');
+            folder.scrollIntoView({ behavior: 'smooth' });
         }
+    }
+
+    // --- IA DAILY SUMMARY ENGINE ---
+    async function generateReport(dateKey) {
+        const reportDiv = document.getElementById(`report-${dateKey.replace(/\//g, '-')}`);
+        const dayData = protocolData[dateKey];
+        
+        reportDiv.innerHTML = `<p class="text-[8px] font-syncopate animate-pulse tracking-widest text-center mt-4 text-[#10b981]">NEURAL LINK ESTABLISHED: ANALYZING BIOMASS...</p>`;
 
         try {
-            const response = await fetch("/.netlify/functions/analyze", {
+            const response = await fetch("/.netlify/functions/summary", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ image: base64Image })
+                body: JSON.stringify({ 
+                    meals: dayData.meals,
+                    totalKcal: dayData.meals.reduce((sum, m) => sum + m.kcal, 0)
+                })
             });
-            const aiResult = await response.json();
-            aiResult.kcal = precisionJitter(aiResult.kcal);
             
-            const dateKey = getTodayKey();
-            if (!protocolData[dateKey]) protocolData[dateKey] = { meals: [], report: null };
+            const report = await response.json();
             
-            const newMeal = { ...aiResult, img: base64Image, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
-            protocolData[dateKey].meals.push(newMeal);
+            // Sauvegarde du rapport dans le dossier du jour
+            protocolData[dateKey].report = report;
             localStorage.setItem('architect_fuel_v1', JSON.stringify(protocolData));
-
-            document.getElementById('l4').classList.add('active');
-            await new Promise(r => setTimeout(r, 600));
-            renderHistory();
-            updateTotalDisplay();
-        } catch (err) { alert("Logic Error."); }
-        finally { setTimeout(() => { overlay.style.display = 'none'; ['l1','l2','l3','l4'].forEach(id => document.getElementById(id).classList.remove('active')); }, 1000); }
+            
+            renderReportUI(dateKey, report);
+        } catch (err) {
+            reportDiv.innerHTML = `<p class="text-red-500 text-[8px]">ANALYSIS FAILED. CHECK LINK.</p>`;
+        }
     }
 
+    function renderReportUI(dateKey, report) {
+        const reportDiv = document.getElementById(`report-${dateKey.replace(/\//g, '-')}`);
+        reportDiv.innerHTML = `
+            <div class="report-card animate-entrance">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="font-syncopate text-[10px] font-bold text-[#10b981]">DAILY PROTOCOL RATING</span>
+                    <span class="font-syncopate text-3xl font-black">${report.score}/10</span>
+                </div>
+                <p class="text-[11px] leading-relaxed mb-4 italic opacity-90">"${report.summary}"</p>
+                <div class="space-y-3">
+                    <div class="border-l border-white/20 pl-3">
+                        <span class="label">Physical Impact</span>
+                        <p class="text-[10px] uppercase tracking-tighter">${report.bodyImpact}</p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mt-4">
+                        <div><span class="label text-green-400">Pros</span><p class="text-[9px]">${report.pros}</p></div>
+                        <div><span class="label text-red-400">Cons</span><p class="text-[9px]">${report.cons}</p></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Mise à jour de renderHistory pour gérer les dossiers fermés
     function renderHistory() {
         const list = document.getElementById('meal-list');
         list.innerHTML = '';
         const todayKey = getTodayKey();
         const sortedDates = Object.keys(protocolData).sort((a, b) => b.localeCompare(a));
 
-        sortedDates.forEach((date, index) => {
+        sortedDates.forEach((date) => {
             const dayData = protocolData[date];
             const dayTotal = dayData.meals.reduce((sum, m) => sum + m.kcal, 0);
             const folderId = `folder-${date.replace(/\//g, '-')}`;
-            const isOpen = date === todayKey; // Uniquement aujourd'hui ouvert par défaut
+            // Seul AUJOURD'HUI est ouvert par défaut. Le reste est fermé.
+            const isOpen = date === todayKey;
 
             const section = document.createElement('div');
+            section.className = "mb-2";
             section.innerHTML = `
                 <div class="day-folder-header ${isOpen ? 'open' : ''}" onclick="toggleFolder('${folderId}')">
-                    <span class="font-syncopate text-[9px] tracking-widest font-bold uppercase">
+                    <span class="font-syncopate text-[9px] tracking-widest font-bold uppercase flex items-center">
                         <span class="folder-arrow mr-2">▶</span>${date}
+                        ${dayData.report ? `<span class="ml-3 text-[#10b981]">[${dayData.report.score}/10]</span>` : ''}
                     </span>
                     <span class="font-syncopate text-[9px] opacity-40">${dayTotal} KCAL</span>
                 </div>
                 <div id="${folderId}" class="day-folder-content ${isOpen ? 'open' : ''} space-y-6">
-                    ${dayData.meals.map(meal => `
-                        <div class="glass-card">
-                            <div class="flex justify-between items-start mb-6">
-                                <span class="meal-badge">Deploy • ${meal.time}</span>
-                                <span class="font-syncopate font-black text-4xl text-[#FFFFFF]">${meal.kcal}</span>
-                            </div>
-                            <div class="flex gap-6">
-                                <img src="${meal.img}" class="w-24 h-24 rounded-2xl object-cover grayscale contrast-125 border border-white/10">
-                                <div class="flex-1 space-y-4">
-                                    <div>
-                                        <span class="label">Analysis</span>
-                                        <h3 class="font-syncopate text-[11px] font-bold text-[#10b981] uppercase">${meal.name}</h3>
-                                    </div>
-                                    <div>
-                                        <span class="label">Biomass</span>
-                                        <p class="text-[9px] opacity-50 uppercase tracking-tighter leading-tight">${meal.ingredients.join(' • ')}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                    <button onclick="generateReport('${date}')" class="w-full py-4 border border-[#10b981]/30 rounded-xl font-syncopate text-[8px] tracking-[0.4em] hover:bg-[#10b981]/10 uppercase">
-                        Generate Daily Protocol Report
-                    </button>
-                    <div id="report-${date.replace(/\//g, '-')}" class="mt-4"></div>
-                </div>
+                    </div>
             `;
             list.appendChild(section);
+            if(dayData.report) renderReportUI(date, dayData.report);
         });
-    }
-
-    async function generateReport(date) {
-        const reportDiv = document.getElementById(`report-${date.replace(/\//g, '-')}`);
-        reportDiv.innerHTML = `<p class="text-[8px] font-syncopate animate-pulse tracking-widest text-center mt-4 text-[#10b981]">ARCHITECT_CORE: COMPILING DATA...</p>`;
     }
 </script>
 </body>
