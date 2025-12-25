@@ -6,11 +6,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700;900&family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        html, body { 
-            position: fixed; width: 100%; height: 100%; 
-            overflow: hidden; background: #000000; margin: 0;
-            touch-action: none; color: #FFFFFF; font-family: 'Inter', sans-serif;
-        }
+html, body { 
+    position: fixed; width: 100%; height: 100%; 
+    overflow: hidden; background: #000000; margin: 0;
+    touch-action: pan-y; /* <-- CHANGÉ : Autorise le défilement vertical au doigt */
+    color: #FFFFFF; font-family: 'Inter', sans-serif;
+}
         .main-wrapper { 
             position: relative; width: 100vw; height: 100vh; 
             display: flex; overflow: hidden;
@@ -80,12 +81,15 @@
         #library-overlay.open { display: flex; transform: translateY(0); }
         .back-btn { font-family: 'Syncopate'; font-size: 10px; font-weight: 700; color: white; border: 1.5px solid rgba(255,255,255,0.2); padding: 12px 24px; border-radius: 100px; }
 
-        #transcription-container {
-            flex-grow: 1; overflow-y: auto; margin-top: 20px; 
-            mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
-            padding: 25vh 10vw; 
-        }
+#transcription-container {
+    flex-grow: 1; 
+    overflow-y: scroll; /* Force l'autorisation du scroll */
+    -webkit-overflow-scrolling: touch; /* Scroll "élastique" fluide sur iPhone */
+    margin-top: 20px; 
+    mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+    padding: 35vh 10vw; /* On augmente le padding pour que la première phrase soit bien au centre */
+}
         #transcription-container::-webkit-scrollbar { display: none; }
 
         #track-selection { display: flex; flex-direction: column; gap: 20px; margin-top: 50px; overflow-y: auto; }
