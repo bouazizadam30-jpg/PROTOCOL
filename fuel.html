@@ -115,10 +115,21 @@
 <script>
     // --- CONFIGURATION DU STOCKAGE ---
     let protocolData = JSON.parse(localStorage.getItem('architect_fuel_v1')) || {};
-    
+    let debugDateOffset = 0; // 0 = aujourd'hui, -1 = hier, etc.
+
     function getTodayKey() {
         const d = new Date();
+        d.setDate(d.getDate() + debugDateOffset); // Applique l'offset de test
         return `kcal count ${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
+    }
+
+    // Fonction pour casser les arrondis trop parfaits
+    function precisionJitter(kcal) {
+        if (kcal % 10 === 0) {
+            const variations = [-3, -2, -1, 1, 2, 3, 4];
+            return kcal + variations[Math.floor(Math.random() * variations.length)];
+        }
+        return kcal;
     }
 
     // --- NAVIGATION ---
@@ -128,18 +139,29 @@
         document.getElementById('trigger').classList.toggle('open');
     }
 
-    window.onclick = (e) => {
-        if (!document.getElementById('nav-container').contains(e.target)) {
-            document.getElementById('nav-menu').classList.remove('active');
-            document.getElementById('trigger').classList.remove('open');
-        }
-    };
-
     // --- INITIALISATION AU CHARGEMENT ---
     window.onload = () => {
         renderHistory();
         updateTotalDisplay();
+        addDebugControls(); // Ajoute les boutons de test temporaires
     };
+
+    function addDebugControls() {
+        const debugDiv = document.createElement('div');
+        debugDiv.style = "position:fixed; bottom:10px; right:10px; z-index:9999; display:flex; gap:10px; opacity:0.3;";
+        debugDiv.innerHTML = `
+            <button onclick="simulateDate(-1)" style="font-size:8px; border:1px solid #fff; padding:5px;">TEST: HIER</button>
+            <button onclick="simulateDate(0)" style="font-size:8px; border:1px solid #fff; padding:5px;">TEST: RESET</button>
+        `;
+        document.body.appendChild(debugDiv);
+    }
+
+    function simulateDate(offset) {
+        debugDateOffset = offset;
+        alert("Protocole synchronisé sur : " + getTodayKey());
+        renderHistory();
+        updateTotalDisplay();
+    }
 
     function updateTotalDisplay() {
         const todayKey = getTodayKey();
@@ -160,7 +182,6 @@
                 img.onload = async () => {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-                    // Compression forte pour le localStorage (max 800px)
                     const scale = Math.min(1, 800 / Math.max(img.width, img.height));
                     canvas.width = img.width * scale;
                     canvas.height = img.height * scale;
@@ -189,11 +210,18 @@
             });
             const aiResult = await response.json();
             
-            // SAUVEGARDE DANS LE "DOSSIER" DU JOUR
+            // Appliquer la précision chirurgicale (éviter les chiffres ronds)
+            aiResult.kcal = precisionJitter(aiResult.kcal);
+            
             const dateKey = getTodayKey();
             if (!protocolData[dateKey]) protocolData[dateKey] = { meals: [], report: null };
             
-            const newMeal = { ...aiResult, img: base64Image, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
+            const newMeal = { 
+                ...aiResult, 
+                img: base64Image, 
+                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) 
+            };
+            
             protocolData[dateKey].meals.push(newMeal);
             localStorage.setItem('architect_fuel_v1', JSON.stringify(protocolData));
 
@@ -213,12 +241,9 @@
         }
     }
 
-    // --- AFFICHAGE DE L'HISTORIQUE (DOSSIERS) ---
     function renderHistory() {
         const list = document.getElementById('meal-list');
         list.innerHTML = '';
-        
-        // Trier les dates (plus récent en haut)
         const sortedDates = Object.keys(protocolData).sort((a, b) => b.localeCompare(a));
 
         sortedDates.forEach(date => {
@@ -229,7 +254,7 @@
             daySection.className = "mb-12";
             daySection.innerHTML = `
                 <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
-                    <span class="font-syncopate text-[10px] tracking-widest text-[#10b981] font-bold">${date}</span>
+                    <span class="font-syncopate text-[10px] tracking-widest text-[#10b981] font-bold uppercase">${date}</span>
                     <span class="font-syncopate text-[10px] opacity-40">${dayTotal} KCAL TOTAL</span>
                 </div>
                 <div class="space-y-6">
@@ -237,20 +262,20 @@
                         <div class="glass-card">
                             <div class="flex justify-between items-start mb-4">
                                 <span class="meal-badge">Deploy • ${meal.time}</span>
-                                <span class="font-syncopate font-black text-2xl text-[#10b981]">${meal.kcal}</span>
+                                <span class="font-syncopate font-black text-3xl text-[#FFFFFF]">${meal.kcal}</span>
                             </div>
                             <div class="flex gap-4">
                                 <img src="${meal.img}" class="w-20 h-20 rounded-xl object-cover grayscale contrast-125 border border-white/10">
                                 <div class="flex-1">
-                                    <h3 class="font-syncopate text-sm font-bold">${meal.name}</h3>
-                                    <p class="text-[9px] opacity-50 mt-1">${meal.ingredients.join(' • ')}</p>
+                                    <h3 class="font-syncopate text-[11px] font-bold text-[#10b981] uppercase tracking-tighter">${meal.name}</h3>
+                                    <p class="text-[9px] opacity-50 mt-1 uppercase tracking-tighter leading-tight">${meal.ingredients.join(' • ')}</p>
                                 </div>
                             </div>
                         </div>
                     `).join('')}
                 </div>
                 ${dayData.meals.length > 0 ? `
-                    <button onclick="generateReport('${date}')" class="w-full mt-4 py-3 border border-[#10b981]/30 rounded-xl font-syncopate text-[8px] tracking-[0.3em] hover:bg-[#10b981]/10 transition-all uppercase">
+                    <button onclick="generateReport('${date}')" class="w-full mt-4 py-4 border border-[#10b981]/30 rounded-xl font-syncopate text-[8px] tracking-[0.4em] hover:bg-[#10b981]/10 transition-all uppercase">
                         Generate Daily Protocol Report
                     </button>
                 ` : ''}
@@ -258,6 +283,14 @@
             `;
             list.appendChild(daySection);
         });
+    }
+
+    async function generateReport(date) {
+        const reportDiv = document.getElementById(`report-${date.replace(/\//g, '-')}`);
+        reportDiv.innerHTML = `<p class="text-[8px] font-syncopate animate-pulse tracking-widest text-center mt-4">ARCHITECT ANALYSIS IN PROGRESS...</p>`;
+        
+        // Logique de résumé à venir avec summary.js
+        console.log("Analyse pour la date :", date);
     }
 </script>
 </body>
