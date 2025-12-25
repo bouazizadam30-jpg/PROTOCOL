@@ -1,43 +1,30 @@
 const axios = require('axios');
 
 exports.handler = async (event) => {
-    const headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS'
-    };
-
+    const headers = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type' };
     if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers };
 
     try {
-        const body = JSON.parse(event.body);
-        const apiKey = process.env.GROK_API_KEY; // Vérifié dans tes réglages
+        const { image } = JSON.parse(event.body);
+        const apiKey = process.env.GROK_API_KEY; //
 
         const response = await axios.post("https://api.x.ai/v1/chat/completions", {
-            model: "grok-2-vision-1212", // Modèle validé par xAI
+            model: "grok-2-vision-1212", //
             messages: [{
                 role: "user",
                 content: [
-                    { type: "text", text: "Analyze this meal. Provide a JSON object: { 'name': '', 'kcal': 0, 'ingredients': [], 'pros': [], 'cons': [] }. ONLY JSON." },
-                    { type: "image_url", image_url: { url: body.image } }
+                    { type: "text", text: "Analyze this meal. JSON only: { 'name': '', 'kcal': 0, 'ingredients': [], 'pros': [], 'cons': [] }" },
+                    { type: "image_url", image_url: { url: image } }
                 ]
             }]
         }, {
-            headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-            timeout: 10000 // Évite les coupures nettes
+            headers: { "Authorization": `Bearer ${apiKey}` }
         });
 
-        // Nettoyage pour extraire uniquement le JSON
-        let rawContent = response.data.choices[0].message.content;
-        const cleanJson = rawContent.substring(rawContent.indexOf('{'), rawContent.lastIndexOf('}') + 1);
-
-        return { statusCode: 200, headers, body: cleanJson };
+        return { statusCode: 200, headers, body: response.data.choices[0].message.content };
     } catch (error) {
-        console.error("Erreur détectée:", error.message);
-        return { 
-            statusCode: 500, 
-            headers, 
-            body: JSON.stringify({ error: "IA_TIMEOUT_OU_CRASH", details: error.message }) 
-        };
+        // Cela va écrire l'erreur RÉELLE dans tes logs Netlify
+        console.error("ERREUR_GROK:", error.response ? error.response.data : error.message);
+        return { statusCode: 500, headers, body: JSON.stringify(error) };
     }
 };
