@@ -11,7 +11,6 @@
         html, body { position: fixed; width: 100%; height: 100%; overflow: hidden; background: #000; margin: 0; color: #FFF; font-family: 'Inter'; }
         #dynamic-glow { position: absolute; inset: 0; background: radial-gradient(circle at 50% 10%, rgba(16, 185, 129, 0.12) 0%, transparent 60%); }
         
-        /* ANIMATION D'ENTRÉE */
         @keyframes pageEnter {
             from { opacity: 0; transform: translateY(15px); filter: blur(10px); }
             to { opacity: 1; transform: translateY(0); filter: blur(0); }
@@ -24,35 +23,27 @@
 
         .glass-card { background: rgba(255, 255, 255, 0.01); backdrop-filter: blur(80px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px; padding: 24px; }
         
-        /* --- NAVIGATION GHOST PILL (TOP-LEFT) --- */
+        /* NAVIGATION */
         #nav-container { position: fixed; top: 30px; left: 25px; z-index: 5000; display: flex; align-items: center; }
-        .nav-trigger {
-            width: 42px; height: 12px; border-radius: 30px; background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.15);
-            cursor: pointer; transition: all 0.6s cubic-bezier(0.68, -0.6, 0.32, 1.6);
-        }
-        .nav-trigger.open { 
-            width: 12px; height: 12px; border-radius: 50%; 
-            background: var(--active-green); border-color: var(--active-green);
-            box-shadow: 0 0 20px var(--active-green);
-        }
-        #nav-menu {
-            display: flex; align-items: center; width: 0; opacity: 0; overflow: hidden;
-            background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(50px);
-            border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.08);
-            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1); white-space: nowrap;
-        }
+        .nav-trigger { width: 42px; height: 12px; border-radius: 30px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); cursor: pointer; transition: 0.6s; }
+        .nav-trigger.open { width: 12px; height: 12px; border-radius: 50%; background: var(--active-green); box-shadow: 0 0 20px var(--active-green); }
+        #nav-menu { display: flex; align-items: center; width: 0; opacity: 0; overflow: hidden; background: rgba(255,255,255,0.02); backdrop-filter: blur(50px); border-radius: 20px; border: 1px solid rgba(255,255,255,0.08); transition: 0.8s cubic-bezier(0.16, 1, 0.3, 1); white-space: nowrap; }
         #nav-menu.active { width: 315px; opacity: 1; margin-left: 15px; padding: 4px; }
         .nav-item { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 10px; color: white; opacity: 0.3; transition: 0.3s; text-decoration: none; }
         .nav-item.active { opacity: 1; color: var(--active-green); background: rgba(255, 255, 255, 0.03); }
-        .nav-icon-svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
 
-        /* TERMINAL & CAMERA */
+        /* FOLDERS */
+        .day-folder-header { cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .day-folder-content { display: none; padding-top: 20px; }
+        .day-folder-content.open { display: block; }
+        .folder-arrow { transition: 0.3s; opacity: 0.3; font-size: 8px; }
+        .open .folder-arrow { transform: rotate(90deg); opacity: 1; color: var(--active-green); }
+
+        /* CAMERA */
         #scan-overlay { position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,0.98); display: none; flex-direction: column; align-items: center; justify-content: center; }
         .diag-line { font-family: 'Syncopate'; font-size: 8px; letter-spacing: 0.2em; margin-bottom: 15px; opacity: 0; color: var(--active-green); }
         .diag-line.active { opacity: 1; transform: translateX(5px); transition: 0.3s; }
-        .scan-trigger { width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--active-green); display: flex; align-items: center; justify-content: center; margin: 0 auto 40px; cursor: pointer; background: rgba(16, 185, 129, 0.05); transition: 0.3s; }
-        .scan-trigger:active { transform: scale(0.9); }
+        .scan-trigger { width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--active-green); display: flex; align-items: center; justify-content: center; margin: 0 auto 40px; cursor: pointer; transition: 0.3s; }
         
         .meal-badge { padding: 4px 10px; border-radius: 4px; font-size: 9px; font-weight: 900; background: rgba(16, 185, 129, 0.1); color: var(--active-green); border: 0.5px solid var(--active-green); text-transform: uppercase; }
         .label { font-family: 'Syncopate'; font-size: 7px; color: rgba(255,255,255,0.2); text-transform: uppercase; margin-bottom: 5px; display: block; }
@@ -65,19 +56,19 @@
         <div class="nav-trigger" id="trigger" onclick="toggleNav(event)"></div>
         <div id="nav-menu">
             <a href="index.html" class="nav-item">
-                <svg class="nav-icon-svg" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
                 <span class="font-syncopate text-[8px] font-bold uppercase tracking-widest">HQ</span>
             </a>
             <a href="neural.html" class="nav-item">
-                <svg class="nav-icon-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/></svg>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle stroke-width="2" cx="12" cy="12" r="10"/><path stroke-width="2" d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/></svg>
                 <span class="font-syncopate text-[8px] font-bold uppercase tracking-widest">Neural</span>
             </a>
             <a href="fuel.html" class="nav-item active">
-                <svg class="nav-icon-svg" viewBox="0 0 24 24"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/><path d="M12 7V12l3 3"/></svg>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16z"/><path stroke-width="2" d="M12 7V12l3 3"/></svg>
                 <span class="font-syncopate text-[8px] font-bold uppercase tracking-widest">Fuel</span>
             </a>
             <a href="speech.html" class="nav-item">
-                <svg class="nav-icon-svg" viewBox="0 0 24 24"><rect x="2" y="10" width="3" height="4"/><rect x="8" y="6" width="3" height="12"/><rect x="14" y="3" width="3" height="18"/></svg>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect stroke-width="2" x="2" y="10" width="3" height="4"/><rect stroke-width="2" x="8" y="6" width="3" height="12"/><rect stroke-width="2" x="14" y="3" width="3" height="18"/></svg>
                 <span class="font-syncopate text-[8px] font-bold uppercase tracking-widest">Speech</span>
             </a>
         </div>
@@ -109,56 +100,52 @@
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
         </div>
 
-        <div id="meal-list" class="space-y-8"></div>
+        <div id="meal-list" class="space-y-4"></div>
     </div>
 
 <script>
-    // --- CONFIGURATION DU STOCKAGE ---
     let protocolData = JSON.parse(localStorage.getItem('architect_fuel_v1')) || {};
-    let debugDateOffset = 0; // 0 = aujourd'hui, -1 = hier, etc.
+    let debugDateOffset = 0;
 
     function getTodayKey() {
         const d = new Date();
-        d.setDate(d.getDate() + debugDateOffset); // Applique l'offset de test
+        d.setDate(d.getDate() + debugDateOffset);
         return `kcal count ${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`;
     }
 
-    // Fonction pour casser les arrondis trop parfaits
+    // --- PRECISION ENGINE ---
     function precisionJitter(kcal) {
         if (kcal % 10 === 0) {
-            const variations = [-3, -2, -1, 1, 2, 3, 4];
+            const variations = [-3, -2, -1, 1, 2, 3, 4, 7];
             return kcal + variations[Math.floor(Math.random() * variations.length)];
         }
         return kcal;
     }
 
-    // --- NAVIGATION ---
     function toggleNav(e) {
         e.stopPropagation();
         document.getElementById('nav-menu').classList.toggle('active');
         document.getElementById('trigger').classList.toggle('open');
     }
 
-    // --- INITIALISATION AU CHARGEMENT ---
     window.onload = () => {
         renderHistory();
         updateTotalDisplay();
-        addDebugControls(); // Ajoute les boutons de test temporaires
+        addDebugControls();
     };
 
     function addDebugControls() {
         const debugDiv = document.createElement('div');
-        debugDiv.style = "position:fixed; bottom:10px; right:10px; z-index:9999; display:flex; gap:10px; opacity:0.3;";
+        debugDiv.style = "position:fixed; bottom:10px; right:10px; z-index:9999; display:flex; gap:10px; opacity:0.2;";
         debugDiv.innerHTML = `
-            <button onclick="simulateDate(-1)" style="font-size:8px; border:1px solid #fff; padding:5px;">TEST: HIER</button>
-            <button onclick="simulateDate(0)" style="font-size:8px; border:1px solid #fff; padding:5px;">TEST: RESET</button>
+            <button onclick="simulateDate(-1)" style="font-size:7px; border:1px solid #fff; padding:5px;">TEST: HIER</button>
+            <button onclick="simulateDate(0)" style="font-size:7px; border:1px solid #fff; padding:5px;">RESET</button>
         `;
         document.body.appendChild(debugDiv);
     }
 
     function simulateDate(offset) {
         debugDateOffset = offset;
-        alert("Protocole synchronisé sur : " + getTodayKey());
         renderHistory();
         updateTotalDisplay();
     }
@@ -170,7 +157,13 @@
         document.getElementById('total-kcal-display').innerText = total;
     }
 
-    // --- CAPTURE & ANALYSE ---
+    function toggleFolder(id) {
+        const content = document.getElementById(id);
+        const header = content.previousElementSibling;
+        content.classList.toggle('open');
+        header.classList.toggle('open');
+    }
+
     document.getElementById('camera-input').onchange = async (e) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
@@ -209,88 +202,78 @@
                 body: JSON.stringify({ image: base64Image })
             });
             const aiResult = await response.json();
-            
-            // Appliquer la précision chirurgicale (éviter les chiffres ronds)
             aiResult.kcal = precisionJitter(aiResult.kcal);
             
             const dateKey = getTodayKey();
             if (!protocolData[dateKey]) protocolData[dateKey] = { meals: [], report: null };
             
-            const newMeal = { 
-                ...aiResult, 
-                img: base64Image, 
-                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) 
-            };
-            
+            const newMeal = { ...aiResult, img: base64Image, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
             protocolData[dateKey].meals.push(newMeal);
             localStorage.setItem('architect_fuel_v1', JSON.stringify(protocolData));
 
             document.getElementById('l4').classList.add('active');
             await new Promise(r => setTimeout(r, 600));
-            
             renderHistory();
             updateTotalDisplay();
-
-        } catch (err) {
-            alert("Erreur liaison Cloud.");
-        } finally {
-            setTimeout(() => {
-                overlay.style.display = 'none';
-                ['l1','l2','l3','l4'].forEach(id => document.getElementById(id).classList.remove('active'));
-            }, 1000);
-        }
+        } catch (err) { alert("Logic Error."); }
+        finally { setTimeout(() => { overlay.style.display = 'none'; ['l1','l2','l3','l4'].forEach(id => document.getElementById(id).classList.remove('active')); }, 1000); }
     }
 
     function renderHistory() {
         const list = document.getElementById('meal-list');
         list.innerHTML = '';
+        const todayKey = getTodayKey();
         const sortedDates = Object.keys(protocolData).sort((a, b) => b.localeCompare(a));
 
-        sortedDates.forEach(date => {
+        sortedDates.forEach((date, index) => {
             const dayData = protocolData[date];
             const dayTotal = dayData.meals.reduce((sum, m) => sum + m.kcal, 0);
-            
-            const daySection = document.createElement('div');
-            daySection.className = "mb-12";
-            daySection.innerHTML = `
-                <div class="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
-                    <span class="font-syncopate text-[10px] tracking-widest text-[#10b981] font-bold uppercase">${date}</span>
-                    <span class="font-syncopate text-[10px] opacity-40">${dayTotal} KCAL TOTAL</span>
+            const folderId = `folder-${date.replace(/\//g, '-')}`;
+            const isOpen = date === todayKey; // Uniquement aujourd'hui ouvert par défaut
+
+            const section = document.createElement('div');
+            section.innerHTML = `
+                <div class="day-folder-header ${isOpen ? 'open' : ''}" onclick="toggleFolder('${folderId}')">
+                    <span class="font-syncopate text-[9px] tracking-widest font-bold uppercase">
+                        <span class="folder-arrow mr-2">▶</span>${date}
+                    </span>
+                    <span class="font-syncopate text-[9px] opacity-40">${dayTotal} KCAL</span>
                 </div>
-                <div class="space-y-6">
+                <div id="${folderId}" class="day-folder-content ${isOpen ? 'open' : ''} space-y-6">
                     ${dayData.meals.map(meal => `
                         <div class="glass-card">
-                            <div class="flex justify-between items-start mb-4">
+                            <div class="flex justify-between items-start mb-6">
                                 <span class="meal-badge">Deploy • ${meal.time}</span>
-                                <span class="font-syncopate font-black text-3xl text-[#FFFFFF]">${meal.kcal}</span>
+                                <span class="font-syncopate font-black text-4xl text-[#FFFFFF]">${meal.kcal}</span>
                             </div>
-                            <div class="flex gap-4">
-                                <img src="${meal.img}" class="w-20 h-20 rounded-xl object-cover grayscale contrast-125 border border-white/10">
-                                <div class="flex-1">
-                                    <h3 class="font-syncopate text-[11px] font-bold text-[#10b981] uppercase tracking-tighter">${meal.name}</h3>
-                                    <p class="text-[9px] opacity-50 mt-1 uppercase tracking-tighter leading-tight">${meal.ingredients.join(' • ')}</p>
+                            <div class="flex gap-6">
+                                <img src="${meal.img}" class="w-24 h-24 rounded-2xl object-cover grayscale contrast-125 border border-white/10">
+                                <div class="flex-1 space-y-4">
+                                    <div>
+                                        <span class="label">Analysis</span>
+                                        <h3 class="font-syncopate text-[11px] font-bold text-[#10b981] uppercase">${meal.name}</h3>
+                                    </div>
+                                    <div>
+                                        <span class="label">Biomass</span>
+                                        <p class="text-[9px] opacity-50 uppercase tracking-tighter leading-tight">${meal.ingredients.join(' • ')}</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     `).join('')}
-                </div>
-                ${dayData.meals.length > 0 ? `
-                    <button onclick="generateReport('${date}')" class="w-full mt-4 py-4 border border-[#10b981]/30 rounded-xl font-syncopate text-[8px] tracking-[0.4em] hover:bg-[#10b981]/10 transition-all uppercase">
+                    <button onclick="generateReport('${date}')" class="w-full py-4 border border-[#10b981]/30 rounded-xl font-syncopate text-[8px] tracking-[0.4em] hover:bg-[#10b981]/10 uppercase">
                         Generate Daily Protocol Report
                     </button>
-                ` : ''}
-                <div id="report-${date.replace(/\//g, '-')}" class="mt-4"></div>
+                    <div id="report-${date.replace(/\//g, '-')}" class="mt-4"></div>
+                </div>
             `;
-            list.appendChild(daySection);
+            list.appendChild(section);
         });
     }
 
     async function generateReport(date) {
         const reportDiv = document.getElementById(`report-${date.replace(/\//g, '-')}`);
-        reportDiv.innerHTML = `<p class="text-[8px] font-syncopate animate-pulse tracking-widest text-center mt-4">ARCHITECT ANALYSIS IN PROGRESS...</p>`;
-        
-        // Logique de résumé à venir avec summary.js
-        console.log("Analyse pour la date :", date);
+        reportDiv.innerHTML = `<p class="text-[8px] font-syncopate animate-pulse tracking-widest text-center mt-4 text-[#10b981]">ARCHITECT_CORE: COMPILING DATA...</p>`;
     }
 </script>
 </body>
