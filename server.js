@@ -6,7 +6,7 @@ const app = express();
 app.use(cors()); 
 app.use(express.json({ limit: '50mb' })); 
 
-const GROK_API_KEY = "xai-Kj0egL3jgvawSqk76oA4c5vQLj8aJ2vJ81urAY00jhp5VP5kyDc5NrFv3m9EnzTfKKspsozUVp8jBU4b";
+const GROK_API_KEY = "xai-sk-REPLACE-WITH-YOUR-KEY"; // Assure-toi de remplacer par ta clé API valide
 
 app.post('/analyze', async (req, res) => {
     try {
